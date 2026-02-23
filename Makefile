@@ -181,6 +181,9 @@ info:
 $(PLATFORM_DIR):
 	$(call MKDIR,$(PLATFORM_DIR))
 
+$(INCLUDE_DIR):
+	$(call MKDIR,$(INCLUDE_DIR))
+
 $(BUILD_DIR):
 	$(call MKDIR,$(BUILD_DIR))
 
@@ -194,7 +197,7 @@ prebuild: $(PLATFORM_DIR)
 
 # Build uplink-c from source (requires Go)
 .PHONY: build-uplink
-build-uplink: $(PLATFORM_DIR)
+build-uplink: $(PLATFORM_DIR) $(INCLUDE_DIR)
 	@echo "Building uplink-c for $(PLATFORM)..."
 	@echo "Source: $(UPLINK_C_DIR)"
 ifdef WINDOWS_NATIVE
@@ -217,7 +220,7 @@ endif
 
 # Copy uplink-c library from parent folder (if already built)
 .PHONY: copy-uplink
-copy-uplink: $(PLATFORM_DIR)
+copy-uplink: $(PLATFORM_DIR) $(INCLUDE_DIR)
 	@echo "Copying uplink-c library from $(UPLINK_C_DIR)..."
 ifdef WINDOWS_NATIVE
 	@if exist "$(subst /,\,$(UPLINK_C_DIR)/$(LIB_NAME))" ( \
@@ -734,7 +737,7 @@ endif
 
 # Build from cloned uplink-c source
 .PHONY: build-uplink-cloned
-build-uplink-cloned: clone-uplink $(PLATFORM_DIR) check-go
+build-uplink-cloned: clone-uplink $(PLATFORM_DIR) $(INCLUDE_DIR) check-go
 	$(Q)echo "══════════════════════════════════════════════════════════════"
 	$(Q)echo "  Building uplink-c for $(PLATFORM)"
 	$(Q)echo "══════════════════════════════════════════════════════════════"
@@ -748,8 +751,12 @@ endif
 	$(Q)$(call CP,$(UPLINK_C_BUILD_DIR)/$(LIB_NAME),$(PLATFORM_DIR)/$(LIB_NAME))
 ifdef WINDOWS_NATIVE
 	$(Q)if exist "$(subst /,\,$(UPLINK_C_BUILD_DIR)/libuplink.h)" $(call CP,$(UPLINK_C_BUILD_DIR)/libuplink.h,$(INCLUDE_DIR)/uplink.h)
+	$(Q)if exist "$(subst /,\,$(UPLINK_C_BUILD_DIR)/uplink_definitions.h)" $(call CP,$(UPLINK_C_BUILD_DIR)/uplink_definitions.h,$(INCLUDE_DIR)/uplink_definitions.h)
+	$(Q)if exist "$(subst /,\,$(UPLINK_C_BUILD_DIR)/uplink_compat.h)" $(call CP,$(UPLINK_C_BUILD_DIR)/uplink_compat.h,$(INCLUDE_DIR)/uplink_compat.h)
 else
 	$(Q)if [ -f "$(UPLINK_C_BUILD_DIR)/libuplink.h" ]; then $(call CP,$(UPLINK_C_BUILD_DIR)/libuplink.h,$(INCLUDE_DIR)/uplink.h); fi
+	$(Q)if [ -f "$(UPLINK_C_BUILD_DIR)/uplink_definitions.h" ]; then $(call CP,$(UPLINK_C_BUILD_DIR)/uplink_definitions.h,$(INCLUDE_DIR)/uplink_definitions.h); fi
+	$(Q)if [ -f "$(UPLINK_C_BUILD_DIR)/uplink_compat.h" ]; then $(call CP,$(UPLINK_C_BUILD_DIR)/uplink_compat.h,$(INCLUDE_DIR)/uplink_compat.h); fi
 endif
 	$(Q)echo "✓ Built $(LIB_NAME)"
 	$(Q)ls -lh "$(PLATFORM_DIR)/$(LIB_NAME)" 2>/dev/null || dir "$(PLATFORM_DIR)\$(LIB_NAME)"
