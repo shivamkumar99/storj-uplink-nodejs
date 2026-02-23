@@ -751,8 +751,12 @@ endif
 	$(Q)$(call CP,$(UPLINK_C_BUILD_DIR)/$(LIB_NAME),$(PLATFORM_DIR)/$(LIB_NAME))
 ifdef WINDOWS_NATIVE
 	$(Q)if exist "$(subst /,\,$(UPLINK_C_BUILD_DIR)/libuplink.h)" $(call CP,$(UPLINK_C_BUILD_DIR)/libuplink.h,$(INCLUDE_DIR)/uplink.h)
+	$(Q)if exist "$(subst /,\,$(UPLINK_C_BUILD_DIR)/uplink_definitions.h)" $(call CP,$(UPLINK_C_BUILD_DIR)/uplink_definitions.h,$(INCLUDE_DIR)/uplink_definitions.h)
+	$(Q)if exist "$(subst /,\,$(UPLINK_C_BUILD_DIR)/uplink_compat.h)" $(call CP,$(UPLINK_C_BUILD_DIR)/uplink_compat.h,$(INCLUDE_DIR)/uplink_compat.h)
 else
 	$(Q)if [ -f "$(UPLINK_C_BUILD_DIR)/libuplink.h" ]; then $(call CP,$(UPLINK_C_BUILD_DIR)/libuplink.h,$(INCLUDE_DIR)/uplink.h); fi
+	$(Q)if [ -f "$(UPLINK_C_BUILD_DIR)/uplink_definitions.h" ]; then $(call CP,$(UPLINK_C_BUILD_DIR)/uplink_definitions.h,$(INCLUDE_DIR)/uplink_definitions.h); fi
+	$(Q)if [ -f "$(UPLINK_C_BUILD_DIR)/uplink_compat.h" ]; then $(call CP,$(UPLINK_C_BUILD_DIR)/uplink_compat.h,$(INCLUDE_DIR)/uplink_compat.h); fi
 endif
 	$(Q)echo "✓ Built $(LIB_NAME)"
 	$(Q)ls -lh "$(PLATFORM_DIR)/$(LIB_NAME)" 2>/dev/null || dir "$(PLATFORM_DIR)\$(LIB_NAME)"
