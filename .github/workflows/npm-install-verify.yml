@@ -70,8 +70,14 @@ jobs:
         run: |
           cd test-npm-install
           node test-install-access.js
-      - name: Run test script (global)
-        if: matrix.scope == 'global'
+      - name: Run test script (global, Linux/macOS)
+        if: matrix.scope == 'global' && runner.os != 'Windows'
         run: node test-npm-install/test-install-access.js
         env:
-          NODE_PATH: /usr/local/lib/node_modules:/Users/runner/.npm-global/lib/node_modules
+          NODE_PATH: /usr/local/lib/node_modules:/home/runner/.npm-global/lib/node_modules:/Users/runner/.npm-global/lib/node_modules
+
+      - name: Run test script (global, Windows)
+        if: matrix.scope == 'global' && runner.os == 'Windows'
+        run: node test-npm-install/test-install-access.js
+        env:
+          NODE_PATH: ${{ env.APPDATA }}\npm\node_modules
