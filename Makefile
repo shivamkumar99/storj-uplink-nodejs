@@ -2,11 +2,11 @@
 # Works on: Linux, macOS, Windows (CMD, PowerShell, MinGW/MSYS2)
 #
 # Installation (one command):
-#   npm install @shivam995364/uplink-nodejs-test                           # auto-detect
-#   UPLINK_INSTALL=prebuilt npm install @shivam995364/uplink-nodejs-test   # prebuilt only
-#   UPLINK_INSTALL=hybrid  npm install @shivam995364/uplink-nodejs-test    # download lib + compile
-#   UPLINK_INSTALL=source  npm install @shivam995364/uplink-nodejs-test    # full source build
-#   UPLINK_INSTALL=skip    npm install @shivam995364/uplink-nodejs-test    # skip native build
+#   npm install storj-uplink-nodejs                           # auto-detect
+#   UPLINK_INSTALL=prebuilt npm install storj-uplink-nodejs   # prebuilt only
+#   UPLINK_INSTALL=hybrid  npm install storj-uplink-nodejs    # download lib + compile
+#   UPLINK_INSTALL=source  npm install storj-uplink-nodejs    # full source build
+#   UPLINK_INSTALL=skip    npm install storj-uplink-nodejs    # skip native build
 #
 # Direct Make Usage:
 #   make install              - Auto-detect (prebuilt → hybrid → source)
@@ -1108,8 +1108,8 @@ help:
 	@echo "  EXAMPLES"
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
-	@echo "  npm install @shivam995364/uplink-nodejs-test          # auto"
-	@echo "  UPLINK_INSTALL=prebuilt npm install @shivam995364/uplink-nodejs-test"
+	@echo "  npm install storj-uplink-nodejs          # auto"
+	@echo "  UPLINK_INSTALL=prebuilt npm install storj-uplink-nodejs"
 	@echo "  UPLINK_INSTALL=source UPLINK_C_DIR=~/uplink-c npm install ..."
 	@echo "  make install-hybrid VERBOSE=1          # Direct Make"
 	@echo "  make download-lib UPLINK_C_VERSION=v1.13.0"

@@ -193,7 +193,7 @@ jobs:
           echo "## Installation" >> CHANGELOG_RELEASE.md
           echo "" >> CHANGELOG_RELEASE.md
           echo '```bash' >> CHANGELOG_RELEASE.md
-          echo 'npm install @shivam995364/uplink-nodejs-test@${{ needs.validate.outputs.version }}' >> CHANGELOG_RELEASE.md
+          echo 'npm install storj-uplink-nodejs@${{ needs.validate.outputs.version }}' >> CHANGELOG_RELEASE.md
           echo '```' >> CHANGELOG_RELEASE.md
           echo "" >> CHANGELOG_RELEASE.md
           echo "## Prebuilt Binaries" >> CHANGELOG_RELEASE.md
