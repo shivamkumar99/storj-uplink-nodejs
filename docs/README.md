@@ -19,6 +19,155 @@ A modern, TypeScript-first binding using pure C + Node-API (N-API) for connectin
 
 ---
 
+## <b>Why This Package? — Differences from the Original Storj Binding</b>
+
+This package (`storj-uplink-nodejs`) is a full rewrite of the original [`uplink-nodejs`](https://github.com/storj-thirdparty/uplink-nodejs) binding published by Storj. Every layer — build system, native C code, error handling, library loading, and TypeScript API — has been redesigned. Below is a summary of the five major differences.
+
+---
+
+### 1. Build Process — Prebuilt Binaries, No Go Required by Default
+
+**Original:** Installation always compiled everything from source. `preinstall` ran `make` which cloned and built `uplink-c` with Go, then `node-gyp` compiled the C++ addon. Go (>= 1.17), a C++ compiler, and `make` were all mandatory on every developer machine.
+
+```
+# Original — always runs on every npm install:
+preinstall → make (clones + builds uplink-c with Go)
+install    → node-gyp configure && node-gyp rebuild
+```
+
+**This package:** Four install modes controlled by the `UPLINK_INSTALL` environment variable, with auto-detection:
+
+| Mode | What runs | Requires |
+| --- | --- | --- |
+| `prebuilt` *(default)* | Downloads prebuilt `libuplink` + `.node` addon from GitHub Releases | Node.js only |
+| `hybrid` | Downloads prebuilt `libuplink`, compiles addon locally | C compiler |
+| `source` | Builds `uplink-c` from source + compiles addon | Go + C compiler |
+| `skip` | No native build | Nothing |
+
+The auto-detect fallback tries `prebuilt → hybrid → source` in order, so most users never need Go installed. The chosen method persists in a `.uplinkrc` file so future `npm install` runs reuse it automatically.
+
+---
+
+### 2. Native Logging — Built-in Diagnostics via Environment Variables
+
+**Original:** No logging at any layer. When something failed during install or at runtime, there was no way to see what the native addon was doing internally.
+
+**This package:** A purpose-built logger lives in the native C layer (`native/src/common/logger.c`). It is fully controlled by environment variables — no code changes needed.
+
+```sh
+UPLINK_LOG_LEVEL=debug node app.js      # console output (stderr, colour-coded)
+UPLINK_LOG_FILE=./uplink.log node app.js # write to file (appended, no colours)
+```
+
+Log levels: `none` · `error` · `warn` · `info` (default) · `debug` · `trace`
+
+Every native source file (`library_loader.c`, `error_registry.c`, `handle_helpers.c`, etc.) emits structured log lines with timestamp, level, source file, line number, and function name:
+
+```
+[2024-01-15 10:23:45] DEBUG [library_loader.c:87 load_uplink_library()] Loaded libuplink from native/prebuilds/darwin-arm64/libuplink.dylib
+[2024-01-15 10:23:46] ERROR [upload_ops.c:112 upload_write()] Write failed: connection timeout
+```
+
+---
+
+### 3. Unified Codebase — No Duplicate Windows / Linux Files
+
+**Original:** The native C++ layer had two completely separate copies of the source tree — one for Linux/macOS (`functions/`) and one for Windows (`functions_win/`), each containing 18 near-identical files:
+
+```
+functions/          ← Linux / macOS
+  libUplink.cc
+  libUplink.h
+  promises_execute.cc
+  promises_complete.cc
+  ...18 files
+
+functions_win/      ← Windows — duplicated code
+  libUplink_win.cc
+  libUplink_win.h
+  promises_execute.cc
+  promises_complete.cc
+  ...18 files
+```
+
+`binding.gyp` selected the entire directory based on the target OS, meaning any bug fix or feature had to be applied twice.
+
+**This package:** A single unified source tree (`native/src/`) compiles on all platforms. Platform differences are handled with narrow `#ifdef` guards inside shared helper files. For example, the entire platform difference for loading the shared library is isolated in one abstraction in `library_loader.c`:
+
+```c
+#ifdef _WIN32
+    #define LOAD_LIBRARY(path) LoadLibraryA(path)
+    #define GET_SYMBOL(handle, name) GetProcAddress((HMODULE)handle, name)
+#else
+    #define LOAD_LIBRARY(path) dlopen(path, RTLD_NOW | RTLD_LOCAL)
+    #define GET_SYMBOL(handle, name) dlsym(handle, name)
+#endif
+```
+
+Every other source file is identical across all platforms.
+
+---
+
+### 4. Error Handling in Native C — No JS Wrapper Mapping
+
+**Original:** Error codes returned from the C++ addon were plain integers. A JavaScript file (`error.js`) contained a large `switch` statement that mapped codes to `class` definitions:
+
+```js
+// error.js — original approach
+function storjException(code, details) {
+    switch (code) {
+        case 0x02: throw new InternalError(details);
+        case 0x13: throw new BucketNotFoundError(details);
+        case 0x21: throw new ObjectNotFoundError(details);
+        // ...
+    }
+}
+```
+
+This meant `instanceof` checks could fail across module boundaries, and error classes were defined entirely in JavaScript with no native awareness.
+
+**This package:** Error classification happens entirely inside the native C layer (`native/src/common/error_registry.c`). The C code evaluates the `uplink_error` code, selects the correct typed error constructor, and calls `napi_new_instance()` to create a properly typed JS error before it ever reaches TypeScript. The error classes themselves are defined via an embedded JS snippet that is evaluated in the caller's realm — meaning `instanceof` works correctly even inside Jest sandboxes or multiple module contexts:
+
+```c
+// error_registry.c — native C creates the right typed error
+napi_value create_typed_error(napi_env env, int32_t code, const char* message) {
+    // look up constructor for this error code
+    // call napi_new_instance() → returns new BucketNotFoundError(...)
+}
+```
+
+The TypeScript layer re-exports these classes with full type annotations but does not duplicate the class definitions or mapping logic.
+
+---
+
+### 5. Dynamic Library Loading — Runtime Resolution Instead of Link-Time
+
+**Original:** `libuplink` was linked at compile time via `binding.gyp` linker flags (e.g. `-luplinkcv1.2.4`). The library had to be in a hard-coded location at build time. There was no mechanism to locate the library at runtime or swap it without a recompile.
+
+**This package:** The native addon does not link `libuplink` at compile time. Instead, `library_loader.c` loads it at runtime using `dlopen` (Linux/macOS) or `LoadLibraryA` (Windows) and resolves each function symbol with `dlsym` / `GetProcAddress`. The loader searches a priority chain of paths:
+
+1. `UPLINK_LIBRARY_PATH` environment variable (user override)
+2. `native/prebuilds/<platform>/libuplink.{dylib,so,dll}` (shipped prebuilt)
+3. `prebuilds/<platform>/libuplink.{dylib,so,dll}` (alternate relative path)
+4. System library directories
+
+This decouples the compiled addon from the library binary, which enables the prebuilt distribution model — the `.node` addon and `libuplink` shared library can be distributed and updated independently without recompiling from source.
+
+---
+
+### Quick Comparison
+
+| | Original `uplink-nodejs` | This package `storj-uplink-nodejs` |
+| --- | --- | --- |
+| **Install** | Always builds from source (Go + C++ required) | Prebuilt download by default (Node.js only) |
+| **Logging** | None | `UPLINK_LOG_LEVEL` + `UPLINK_LOG_FILE` env vars |
+| **Platform code** | Duplicate `functions/` and `functions_win/` directories | Single `native/src/` with `#ifdef` guards |
+| **Error mapping** | JavaScript `switch` in `error.js` | Native C `error_registry.c`, typed before reaching JS |
+| **Library loading** | Linked at compile time | Runtime `dlopen`/`LoadLibraryA` with path search |
+| **Language** | C++ (N-API with STL) | Pure C (Node-API, no C++ dependencies) |
+
+---
+
 ## <b>Initial Set-up</b>
 
 Node.js **v18 or higher** is required. [Download Node.js](https://nodejs.org/en/download/)
