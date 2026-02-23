@@ -235,8 +235,8 @@ Recommended settings for `main` branch:
    ```
 
 6. **Post-publish verification**
-   - `npm view @shivam995364/uplink-nodejs-test`
-   - `npm install @shivam995364/uplink-nodejs-test` in a fresh project
+   - `npm view storj-uplink-nodejs`
+   - `npm install storj-uplink-nodejs` in a fresh project
 
 ---
 
