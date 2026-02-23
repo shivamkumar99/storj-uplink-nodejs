@@ -1,0 +1,25 @@
+# Exclude native/include and native/prebuilds from npm package
+native/include/
+native/prebuilds/
+# Exclude test, scripts, and other dev files
+test/
+scripts/
+# Exclude build artifacts
+build/
+# Exclude config and dotfiles not needed in package
+*.log
+*.tsbuildinfo
+*.swp
+*.swo
+*.DS_Store
+# Exclude local env files
+.env*
+# Exclude benchmarks
+benchmarks/
+# Exclude editor folders
+.vscode/
+.idea/
+# Exclude coverage
+coverage/
+# Exclude reports
+reports/

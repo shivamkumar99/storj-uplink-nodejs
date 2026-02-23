@@ -1,0 +1,92 @@
+# Cursor Rules for uplink-nodejs-v1
+
+## Project Context
+
+This is a Node.js native binding for Storj's uplink-c library using **pure C** (not C++) with Node-API (N-API).
+
+## Language Rules
+
+### Native Code (native/ folder)
+- Use ONLY pure C, never C++
+- Use `node_api.h`, never `napi.h`
+- File extensions: `.c` and `.h` only
+- Follow C11 standard
+
+### TypeScript Code (src/ folder)
+- Strict TypeScript, no `any` type
+- All async operations return Promises
+- Follow existing class names: Uplink, AccessResultStruct, ProjectResultStruct, etc.
+
+## Naming Conventions
+
+| Context | Convention | Example |
+|---------|------------|---------|
+| C functions | snake_case | `parse_access`, `create_bucket` |
+| C macros | UPPER_SNAKE | `LOG_ERROR`, `HANDLE_TYPE_ACCESS` |
+| C structs | PascalCase | `ParseAccessData`, `HandleEntry` |
+| TS classes | PascalCase | `AccessResultStruct`, `ProjectResultStruct` |
+| TS methods | camelCase | `parseAccess`, `openProject` |
+
+## Required Patterns
+
+### C Async Pattern
+```c
+typedef struct {
+    char* param;
+    UplinkXxxResult result;
+    napi_deferred deferred;
+    napi_async_work work;
+} XxxData;
+
+static void xxx_execute(napi_env env, void* data) {
+    (void)env;
+    XxxData* d = (XxxData*)data;
+    d->result = uplink_xxx(d->param);
+}
+
+static void xxx_complete(napi_env env, napi_status status, void* data) {
+    // Handle result/error, resolve/reject promise, cleanup
+}
+```
+
+### Always Include Logging
+```c
+LOG_DEBUG("Function called with: %s", param);
+LOG_ERROR("Failed: %s", error->message);
+LOG_INFO("Success: handle=%zu", handle);
+```
+
+### Always Validate Inputs
+```typescript
+if (!bucketName || bucketName.length < 3) {
+    throw new TypeError('Bucket name must be at least 3 characters');
+}
+```
+
+### Always Clean Up Memory
+```c
+uplink_free_access_result(result);
+uplink_free_error(error);
+free(allocated_string);
+```
+
+## DO NOT Generate
+
+- C++ code in native/ folder
+- Code using `napi.h` instead of `node_api.h`
+- Synchronous blocking calls to uplink-c
+- Callback-based APIs (use Promises)
+- Code with `any` type in TypeScript
+- Functions without logging
+- Code without input validation
+
+## File Organization
+
+```
+native/src/common/     → logger.c, handle_helpers.c, string_helpers.c
+native/src/access/     → access_ops.c
+native/src/project/    → project_ops.c
+src/uplink.ts          → Uplink class
+src/access.ts          → AccessResultStruct class
+src/types/index.ts     → All interfaces and types
+```

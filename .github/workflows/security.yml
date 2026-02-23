@@ -1,0 +1,254 @@
+# ==============================================================================
+# Security Pipeline - Comprehensive Security Scanning
+# ==============================================================================
+# Triggers: Push to main, PRs to main, weekly schedule
+# Purpose: Deep security analysis — SAST, dependency scan, secrets, binary integrity
+#
+# NOTE: Basic checks (lint, tsc, cppcheck, npm audit, gitleaks) are already
+#       handled by ci.yml. This workflow runs ONLY the deeper/heavier tools.
+# ==============================================================================
+
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  # ============================================================================
+  # CodeQL Analysis (GitHub Advanced Security)
+  # ============================================================================
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript-typescript', 'c-cpp']
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9e907b5e64f6b83e7804b09294d44122997950d6 # v4
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-extended,security-and-quality
+
+      - name: Setup Node.js (for C build)
+        if: matrix.language == 'c-cpp'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+
+      - name: Setup Go (for C build)
+        if: matrix.language == 'c-cpp'
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.21'
+          cache: false
+
+      - name: Build for C analysis
+        if: matrix.language == 'c-cpp'
+        run: |
+          npm ci --ignore-scripts
+          make install-source SKIP_VERIFY=1
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@9e907b5e64f6b83e7804b09294d44122997950d6 # v4
+        continue-on-error: true
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ============================================================================
+  # Semgrep SAST
+  # ============================================================================
+  semgrep:
+    name: Semgrep SAST
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Run Semgrep
+        run: |
+          semgrep scan \
+            --config=auto \
+            --config=p/typescript \
+            --config=p/nodejs \
+            --config=p/security-audit \
+            --config=p/owasp-top-ten \
+            --sarif --output=semgrep.sarif \
+            --no-error
+        continue-on-error: true
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6 # v4
+        continue-on-error: true
+        with:
+          sarif_file: semgrep.sarif
+        if: always() && hashFiles('semgrep.sarif') != ''
+
+  # ============================================================================
+  # Dependency Scanning (Snyk — deeper than npm audit in CI)
+  # ============================================================================
+  dependency-scan:
+    name: Dependency Security (Snyk)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Snyk Security Scan
+        uses: snyk/actions/node@9adf32b1121593767fc3c057af55b55db032dc04 # master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --sarif-file-output=snyk.sarif
+
+      - name: Upload Snyk SARIF
+        uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6 # v4
+        continue-on-error: true
+        with:
+          sarif_file: snyk.sarif
+        if: always() && hashFiles('snyk.sarif') != ''
+
+  # ============================================================================
+  # License Compliance
+  # ============================================================================
+  licenses:
+    name: License Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+
+      - run: npm ci --ignore-scripts
+
+      - name: Check Licenses
+        run: npx license-checker --production --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense;CC0-1.0"
+
+  # ============================================================================
+  # Secret Detection (TruffleHog — deeper than Gitleaks in CI)
+  # ============================================================================
+  secrets-scan:
+    name: Secret Detection (TruffleHog)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog Scan
+        uses: trufflesecurity/trufflehog@6961f2bace57ab32b23b3ba40f8f420f6bc7e004 # main
+        with:
+          extra_args: --only-verified
+        continue-on-error: true
+
+  # ============================================================================
+  # Binary Integrity - ClamAV Scan + SHA256 Checksums
+  # ============================================================================
+  binary-integrity:
+    name: Binary Integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install ClamAV
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clamav
+          sudo freshclam || true
+
+      - name: Scan prebuilt binaries with ClamAV
+        run: |
+          echo "## Binary Integrity Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -d "native/prebuilds" ] && [ "$(find native/prebuilds -name '*.node' -o -name '*.so' -o -name '*.dylib' -o -name '*.dll' 2>/dev/null)" ]; then
+            echo "Scanning prebuilt binaries..."
+            clamscan --recursive --infected --no-summary native/prebuilds/ > clamav-report.txt 2>&1 || true
+
+            if grep -q "FOUND" clamav-report.txt; then
+              echo "| File | Status |" >> $GITHUB_STEP_SUMMARY
+              echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+              grep "FOUND" clamav-report.txt | while read line; do
+                echo "| $line | INFECTED |" >> $GITHUB_STEP_SUMMARY
+              done
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "ClamAV detected infected files!"
+              exit 1
+            else
+              echo "ClamAV: All binaries clean" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "No prebuilt binaries found to scan" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Generate SHA256 checksums
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -d "native/prebuilds" ] && [ "$(find native/prebuilds -type f 2>/dev/null)" ]; then
+            echo "### SHA256 Checksums" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            find native/prebuilds -type f \( -name '*.node' -o -name '*.so' -o -name '*.dylib' -o -name '*.dll' \) -exec sha256sum {} \; | tee checksums-sha256.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No binaries found for checksum generation" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload integrity reports
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: binary-integrity-report
+          path: |
+            clamav-report.txt
+            checksums-sha256.txt
+        if: always()
+
+  # ============================================================================
+  # Security Summary
+  # ============================================================================
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [codeql, semgrep, dependency-scan, licenses, secrets-scan, binary-integrity]
+    if: always()
+    steps:
+      - name: Check security results
+        run: |
+          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| CodeQL | ${{ needs.codeql.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Semgrep | ${{ needs.semgrep.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Snyk Dependencies | ${{ needs.dependency-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Licenses | ${{ needs.licenses.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| TruffleHog Secrets | ${{ needs.secrets-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Binary Integrity | ${{ needs.binary-integrity.result }} |" >> $GITHUB_STEP_SUMMARY

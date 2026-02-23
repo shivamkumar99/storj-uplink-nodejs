@@ -1,0 +1,102 @@
+rules:
+  # TypeScript: Unsafe Buffer constructor
+  - id: ts-unsafe-buffer-constructor
+    patterns:
+      - pattern: new Buffer($X)
+    message: "Use Buffer.alloc() or Buffer.from() instead of deprecated Buffer constructor"
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-119"
+      owasp: "A9:2017"
+
+  # TypeScript: Dangerous type assertion
+  - id: ts-any-type-assertion
+    patterns:
+      - pattern: $X as any
+      - pattern: <any>$X
+    message: "Type assertion to 'any' bypasses type safety - security risk"
+    languages: [typescript]
+    severity: WARNING
+
+  # TypeScript: Promise without error handling
+  - id: ts-unhandled-promise
+    patterns:
+      - pattern: |
+          $FUNC(...).then($HANDLER)
+      - pattern-not: |
+          $FUNC(...).then($HANDLER).catch(...)
+      - pattern-not: |
+          await $FUNC(...)
+    message: "Promise without .catch() - potential unhandled rejection"
+    languages: [typescript]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-755"
+
+  # TypeScript: Missing input validation in public methods
+  - id: ts-public-method-no-validation
+    patterns:
+      - pattern: |
+          async $METHOD($PARAM: string): Promise<$RET> {
+            ...
+            return native.$CALL($PARAM, ...);
+          }
+      - pattern-not: |
+          async $METHOD($PARAM: string): Promise<$RET> {
+            if (!$PARAM || typeof $PARAM !== 'string') { throw ... }
+            ...
+            return native.$CALL($PARAM, ...);
+          }
+    message: "Public method calls native binding without input validation"
+    languages: [typescript]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-20"
+
+  # C: malloc without NULL check
+  - id: c-malloc-null-check
+    patterns:
+      - pattern: |
+          $PTR = malloc(...);
+          ...
+          $PTR->$FIELD
+      - pattern-not: |
+          $PTR = malloc(...);
+          if ($PTR == NULL) { ... }
+          ...
+    message: "malloc() result used without NULL check"
+    languages: [c]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-476"
+
+  # C: calloc without NULL check
+  - id: c-calloc-null-check
+    patterns:
+      - pattern: |
+          $PTR = calloc(...);
+          ...
+          $PTR->$FIELD
+      - pattern-not: |
+          $PTR = calloc(...);
+          if ($PTR == NULL) { ... }
+          ...
+    message: "calloc() result used without NULL check"
+    languages: [c]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-476"
+
+  # C: uplink result not freed
+  - id: c-uplink-memory-leak
+    patterns:
+      - pattern: $RESULT = uplink_$FUNC(...);
+    pattern-not-inside: |
+      ...
+      uplink_free_$FREE(...);
+    message: "uplink-c result may not be freed - potential memory leak"
+    languages: [c]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-401"

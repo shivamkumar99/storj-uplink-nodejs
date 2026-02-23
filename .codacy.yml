@@ -1,0 +1,11 @@
+---
+engines:
+  cppcheck:
+    language: c
+    exclude_paths:
+      - "build/**"
+      - "node_modules/**"
+exclude_paths:
+  - "build/**"
+  - "node_modules/**"
+  - "dist/**"

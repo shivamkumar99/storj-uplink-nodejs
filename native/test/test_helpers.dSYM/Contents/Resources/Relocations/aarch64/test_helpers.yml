@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/shivam/development/learning/uplink-nodejs/uplink-nodejs-v1/native/test/test_helpers'
+relocations:     []
+...

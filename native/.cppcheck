@@ -1,0 +1,9 @@
+# Enable all checks
+enable=all
+
+# Suppress false positives
+suppress=missingIncludeSystem
+suppress=unusedFunction
+
+# Treat warnings as errors for CI
+# error-exitcode=1

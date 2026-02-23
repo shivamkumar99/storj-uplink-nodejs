@@ -1,0 +1,84 @@
+#!/bin/bash
+# Run all C unit tests
+#
+# Usage:
+#   ./scripts/test-c [--verbose]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+TEST_DIR="$PROJECT_DIR/native/test"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+echo -e "${YELLOW}=== Running C Unit Tests ===${NC}\n"
+
+# Determine compiler
+if command -v gcc &> /dev/null; then
+    CC="gcc"
+elif command -v clang &> /dev/null; then
+    CC="clang"
+elif command -v cc &> /dev/null; then
+    CC="cc"
+else
+    echo -e "${RED}No C compiler found!${NC}"
+    exit 1
+fi
+
+echo "Using compiler: $CC"
+echo ""
+
+# Compile and run each test file
+TOTAL_PASSED=0
+TOTAL_FAILED=0
+
+run_test() {
+    local test_src="$1"
+    local test_name=$(basename "$test_src" .c)
+    local test_bin="$TEST_DIR/$test_name"
+    
+    echo -e "${YELLOW}Building $test_name...${NC}"
+    
+    if $CC -std=c11 -Wall -Wextra -g -I "$TEST_DIR" "$test_src" -o "$test_bin" 2>&1; then
+        echo -e "Running $test_name...\n"
+        
+        if "$test_bin"; then
+            echo -e "${GREEN}✓ $test_name passed${NC}\n"
+            ((TOTAL_PASSED++))
+        else
+            echo -e "${RED}✗ $test_name failed${NC}\n"
+            ((TOTAL_FAILED++))
+        fi
+        
+        # Cleanup binary
+        rm -f "$test_bin"
+    else
+        echo -e "${RED}✗ Failed to build $test_name${NC}\n"
+        ((TOTAL_FAILED++))
+    fi
+}
+
+# Run all test_*.c files
+for test_file in "$TEST_DIR"/test_*.c; do
+    if [[ -f "$test_file" ]]; then
+        run_test "$test_file"
+    fi
+done
+
+# Summary
+echo -e "\n${YELLOW}=== Summary ===${NC}"
+echo -e "Passed: ${GREEN}$TOTAL_PASSED${NC}"
+echo -e "Failed: ${RED}$TOTAL_FAILED${NC}"
+
+if [[ $TOTAL_FAILED -gt 0 ]]; then
+    echo -e "\n${RED}Some tests failed!${NC}"
+    exit 1
+else
+    echo -e "\n${GREEN}All tests passed!${NC}"
+    exit 0
+fi

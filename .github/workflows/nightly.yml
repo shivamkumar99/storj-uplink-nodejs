@@ -1,0 +1,251 @@
+# ==============================================================================
+# Nightly Build - Scheduled Testing
+# ==============================================================================
+# Triggers: Daily at 2 AM UTC, manual dispatch
+# Purpose: Extended tests, memory checks, and compatibility testing
+# ==============================================================================
+
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:
+
+jobs:
+  # ============================================================================
+  # Extended Test Matrix
+  # ============================================================================
+  test-matrix:
+    name: Test (Node ${{ matrix.node }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['18', '20', '22']
+        include:
+          - os: ubuntu-latest
+            platform: linux-x64
+          - os: macos-latest
+            platform: darwin-arm64
+          - os: windows-latest
+            platform: win32-x64
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.21'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build
+        run: make install-source
+        shell: bash
+
+      - name: Run all tests
+        run: npm test
+
+      - name: Run integration tests
+        run: npm run test:integration
+        continue-on-error: true
+
+  # ============================================================================
+  # Memory Leak Testing (Linux only - Valgrind)
+  # ============================================================================
+  memory-tests:
+    name: Memory Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.21'
+
+      - name: Install Valgrind
+        run: sudo apt-get update && sudo apt-get install -y valgrind
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build with debug symbols
+        run: |
+          npm run build:ts
+          CFLAGS="-g -O0" npm run build:native
+
+      - name: Run memory tests
+        run: npm run test:memory
+        continue-on-error: true
+        env:
+          STORJ_ACCESS_GRANT: ${{ secrets.STORJ_ACCESS_GRANT }}
+
+  # ============================================================================
+  # Installation Methods Tests (Sprint 13)
+  # ============================================================================
+  install-methods:
+    name: Installation Methods (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.21'
+
+      - name: Setup Python (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run installation methods tests
+        run: npm run test:install
+        shell: bash
+
+  # ============================================================================
+  # AddressSanitizer Build
+  # ============================================================================
+  asan-tests:
+    name: AddressSanitizer Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.21'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build with ASan
+        run: |
+          export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -g"
+          export LDFLAGS="-fsanitize=address"
+          make install-source VERBOSE=1
+        continue-on-error: true
+
+      - name: Run tests with ASan
+        run: |
+          export ASAN_OPTIONS=detect_leaks=1:abort_on_error=1
+          npm run test:unit
+        continue-on-error: true
+
+  # ============================================================================
+  # Benchmark Tests
+  # ============================================================================
+  benchmarks:
+    name: Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.21'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build
+        run: make install-source
+
+      - name: Run benchmarks
+        run: npm run benchmark
+        continue-on-error: true
+
+  # ============================================================================
+  # Dependency Updates Check
+  # ============================================================================
+  dependency-check:
+    name: Dependency Updates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Check for outdated packages
+        run: |
+          echo "## Outdated Dependencies" >> $GITHUB_STEP_SUMMARY
+          npm outdated --json > outdated.json || true
+          cat outdated.json | jq -r 'to_entries[] | "- \(.key): \(.value.current) → \(.value.latest)"' >> $GITHUB_STEP_SUMMARY || echo "All dependencies up to date" >> $GITHUB_STEP_SUMMARY
+
+      - name: Security audit
+        run: |
+          echo "## Security Audit" >> $GITHUB_STEP_SUMMARY
+          npm audit --json > audit.json || true
+          cat audit.json | jq -r '.metadata.vulnerabilities | to_entries[] | select(.value > 0) | "\(.key): \(.value)"' >> $GITHUB_STEP_SUMMARY || echo "No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # Nightly Summary
+  # ============================================================================
+  summary:
+    name: Nightly Summary
+    runs-on: ubuntu-latest
+    needs: [test-matrix, install-methods, memory-tests, asan-tests, benchmarks, dependency-check]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Nightly Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Matrix | ${{ needs.test-matrix.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Install Methods | ${{ needs.install-methods.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Memory Tests | ${{ needs.memory-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ASan Tests | ${{ needs.asan-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Benchmarks | ${{ needs.benchmarks.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Check | ${{ needs.dependency-check.result }} |" >> $GITHUB_STEP_SUMMARY

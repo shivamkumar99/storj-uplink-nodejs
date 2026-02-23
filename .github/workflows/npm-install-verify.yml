@@ -1,0 +1,55 @@
+# ============================================================================
+# NPM Install Verification Workflow
+# ============================================================================
+# Trigger: Manual (workflow_dispatch)
+# Purpose: After npm publish, verify that the published package can be installed
+#          globally and locally on all 3 OSes, and can be required and used.
+# ============================================================================
+
+name: NPM Install Verify
+
+on:
+  workflow_dispatch:
+
+jobs:
+  install-verify:
+    name: Install & Require Test (${{ matrix.os }}, ${{ matrix.scope }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        scope: [local, global]
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Create test directory
+        run: mkdir test-npm-install
+      - name: Init test project (local)
+        if: matrix.scope == 'local'
+        run: |
+          cd test-npm-install
+          npm init -y
+      - name: Install package from npm (local)
+        if: matrix.scope == 'local'
+        run: |
+          cd test-npm-install
+          npm install @shivam995364/uplink-nodejs-test@latest
+      - name: Install package from npm (global)
+        if: matrix.scope == 'global'
+        run: npm install -g @shivam995364/uplink-nodejs-test@latest
+      - name: Copy test script
+        run: |
+          echo "// Minimal runtime test: require the package and get access\nconst { Uplink } = require('@shivam995364/uplink-nodejs-test');\nconst SATELLITE = process.env.TEST_SATELLITE || 'dummy';\nconst API_KEY = process.env.TEST_API_KEY || 'dummy';\nconst PASSPHRASE = process.env.TEST_PASSPHRASE || 'dummy';\n(async () => {\n  try {\n    const uplink = new Uplink();\n    await uplink.requestAccessWithPassphrase(SATELLITE, API_KEY, PASSPHRASE);\n    console.log('Access request attempted (expected to fail with dummy creds)');\n    process.exit(0);\n  } catch (err) {\n    if (err && err.message && err.message.includes('require')) {\n      console.error('Require or instantiation failed:', err);\n      process.exit(1);\n    }\n    console.log('Access request failed as expected:', err.message);\n    process.exit(0);\n  }\n})();" > test-npm-install/test-install-access.js
+      - name: Run test script (local)
+        if: matrix.scope == 'local'
+        run: |
+          cd test-npm-install
+          node test-install-access.js
+      - name: Run test script (global)
+        if: matrix.scope == 'global'
+        run: node test-npm-install/test-install-access.js
+        env:
+          NODE_PATH: /usr/local/lib/node_modules:/Users/runner/.npm-global/lib/node_modules

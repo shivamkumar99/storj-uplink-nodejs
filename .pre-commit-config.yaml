@@ -1,0 +1,28 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: detect-private-key
+      - id: detect-aws-credentials
+      - id: check-added-large-files
+
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint
+        entry: npm run lint
+        language: system
+        types: [typescript]
+        pass_filenames: false
+
+      - id: typescript
+        name: TypeScript Check
+        entry: npx tsc --noEmit
+        language: system
+        types: [typescript]
+        pass_filenames: false

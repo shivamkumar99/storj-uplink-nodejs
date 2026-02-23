@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Coverage
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.test
+
+# Test artifacts
+*.lcov
+test/memory/results/
+test/output/
+
+# Binary distribution artifacts
+.downloads/
+.uplink-c-build/
+native/prebuilds/
+native/include/
+
+#
+.claude
+
+# Persistent install config (user-specific, not committed)
+.uplinkrc

@@ -1,0 +1,2 @@
+echo "Running TypeScript lint..."
+npm run lint

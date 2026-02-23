@@ -1,0 +1,29 @@
+title = "uplink-nodejs gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist for false positives"
+paths = [
+  '''node_modules''',
+  '''\.git''',
+  '''dist''',
+  '''build''',
+  '''\.env\.test\.example''',
+  '''coverage''',
+]
+
+# Project-specific allowlist
+regexes = [
+  '''EXAMPLE_.*''',
+  '''TEST_.*_PLACEHOLDER''',
+  '''your_.*_here''',
+]
+
+# Storj-specific patterns
+[[rules]]
+id = "storj-access-grant-test"
+description = "Test Storj Access Grant (allow in test example files)"
+regex = '''1[A-Za-z0-9]{100,}'''
+allowlist = { paths = ['''test/''', '''\.env\.test\.example''']}
