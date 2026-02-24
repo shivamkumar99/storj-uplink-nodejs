@@ -265,11 +265,19 @@ else
 endif
 	@$(MAKE) fix-header-compat
 
-# Patch uplink_definitions.h for MSVC compatibility after copying upstream headers.
-# MSVC (C mode) forbids empty structs (error C2016). The upstream header has three
-# empty "options" structs that only GCC/Clang can handle via #pragma diagnostic.
-# This target replaces those empty structs with an #ifdef _MSC_VER / #else block.
+# Patch upstream headers for MSVC compatibility after copying from uplink-c.
+#
+# uplink_definitions.h: MSVC (C mode) forbids empty structs (error C2016).
+#   The three empty "options" structs are wrapped in #ifdef _MSC_VER / #else / #endif,
+#   providing dummy char members for MSVC and the original GCC pragma blocks for GCC/Clang.
+#
+# uplink_compat.h: MSVC does not support the GCC extension #warning (error C1021).
+#   The #warning directive is replaced with an equivalent #pragma message wrapped in
+#   #ifdef _MSC_VER / #else / #endif so MSVC uses #pragma message and GCC uses #warning.
+#
+# Both patches are idempotent (checked via grep before applying).
 DEFS_HEADER := $(INCLUDE_DIR)/uplink_definitions.h
+COMPAT_HEADER := $(INCLUDE_DIR)/uplink_compat.h
 .PHONY: fix-header-compat
 fix-header-compat:
 	@if [ -f "$(DEFS_HEADER)" ]; then \
@@ -299,6 +307,26 @@ fix-header-compat:
 				fs.writeFileSync(f, before + msvc + after + '\n#endif /* _MSC_VER */\n'); \
 				console.log('  ✓ Patched'); \
 			" "$(DEFS_HEADER)"; \
+		fi; \
+	fi
+	@if [ -f "$(COMPAT_HEADER)" ]; then \
+		if grep -q '_MSC_VER' "$(COMPAT_HEADER)"; then \
+			echo "  uplink_compat.h already has MSVC compat — skipping"; \
+		else \
+			echo "  Patching uplink_compat.h for MSVC #warning compat..."; \
+			node -e " \
+				const fs = require('fs'); \
+				const f = process.argv[1]; \
+				let src = fs.readFileSync(f, 'utf8'); \
+				const warningRe = /#warning\s*([\s\S]*?)(?=\n\n|\n#)/; \
+				const m = warningRe.exec(src); \
+				if (!m) { console.log('  No #warning found — skipping'); process.exit(0); } \
+				let msg = m[1].replace(/\\\n\s*/g, ' ').trim(); \
+				if (msg.startsWith('\"') && msg.endsWith('\"')) msg = msg.slice(1, -1); \
+				const replacement = '#ifdef _MSC_VER\n#pragma message(' + JSON.stringify(msg) + ')\n#else\n' + m[0] + '\n#endif /* _MSC_VER */'; \
+				fs.writeFileSync(f, src.replace(m[0], replacement)); \
+				console.log('  ✓ Patched'); \
+			" "$(COMPAT_HEADER)"; \
 		fi; \
 	fi
 
