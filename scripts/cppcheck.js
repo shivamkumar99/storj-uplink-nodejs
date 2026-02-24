@@ -61,12 +61,14 @@ function findNodeInclude() {
  * Try to find the system SDK include path (macOS needs xcrun)
  */
 function findSystemInclude() {
-    // Linux: /usr/include usually works out of the box
-    if (fs.existsSync('/usr/include/stdlib.h')) {
-        return '/usr/include';
-    }
+    // NOTE: On Linux we intentionally skip /usr/include.
+    // Passing it causes cppcheck to deeply parse glibc headers (stdlib.h etc.)
+    // which contain GCC-specific macros (__wur, __THROW, __attribute__) that
+    // cppcheck 2.13 cannot parse → syntaxError → checkersReport exit 1.
+    // Cppcheck itself states: "Cppcheck does not need standard library headers
+    // to get proper results." [missingIncludeSystem]
 
-    // macOS: headers are inside the SDK
+    // macOS: headers are inside the SDK and cppcheck handles the SDK well
     if (process.platform === 'darwin') {
         try {
             const sdkPath = execSync('xcrun --show-sdk-path', { encoding: 'utf8' }).trim();
@@ -102,12 +104,11 @@ function main() {
     }
 
     // System headers (stdlib.h, string.h, etc.)
+    // On Linux, /usr/include is intentionally skipped — see findSystemInclude() comment.
     const sysInclude = findSystemInclude();
     if (sysInclude) {
         includePaths.push(sysInclude);
         console.log(`[cppcheck] System headers:  ${sysInclude}`);
-    } else {
-        console.warn('[cppcheck] Warning: system headers not found');
     }
 
     // Build the cppcheck command
