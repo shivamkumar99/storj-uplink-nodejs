@@ -760,6 +760,7 @@ else
 endif
 	$(Q)echo "✓ Built $(LIB_NAME)"
 	$(Q)ls -lh "$(PLATFORM_DIR)/$(LIB_NAME)" 2>/dev/null || dir "$(PLATFORM_DIR)\$(LIB_NAME)"
+	@$(MAKE) fix-header-compat
 	@$(MAKE) generate-import-lib
 
 # Copy built addon to prebuilds
