@@ -115,12 +115,13 @@ function main() {
         '--enable=all',
         '--inline-suppr',
         '--suppress=unusedFunction',        // N-API exports are called from JS, not C
-        '--suppress=staticFunction',        // All flagged functions are declared in .h headers
-                                            // and used across translation units — cppcheck can't
-                                            // see cross-file linkage when analyzing single files
         '--suppress=constVariablePointer',  // Suggests `type* const p` (const on the pointer
         '--suppress=constParameterPointer', // itself, not what it points to) — uncommon in C
                                             // and adds clutter with minimal safety benefit
+        '--suppress=unmatchedSuppression',  // Guard against cppcheck version drift: apt on
+                                            // ubuntu-latest ships 2.13.0 which lacks some checks
+                                            // (e.g. staticFunction added in 2.17). Unmatched
+                                            // suppressions would otherwise exit 1 via checkersReport.
     ];
 
     if (isXml) {
