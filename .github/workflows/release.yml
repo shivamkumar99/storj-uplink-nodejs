@@ -152,6 +152,14 @@ jobs:
         if: matrix.arch == 'arm64' || runner.arch == 'X64'
         run: npm run test:unit
 
+      - name: Verify build outputs
+        run: |
+          echo "=== native/prebuilds/${{ matrix.platform }} ==="
+          ls -lh "native/prebuilds/${{ matrix.platform }}/" || echo "ERROR: prebuilds dir missing!"
+          echo "=== native/include ==="
+          ls -lh native/include/ || echo "ERROR: include dir missing!"
+        shell: bash
+
       - name: Create archive
         # Archive layout:
         #   libuplink.{dylib,so,dll}   — shared library
@@ -165,23 +173,41 @@ jobs:
         # native/include/ so that the hybrid fallback (node-gyp rebuild) can find
         # the headers without a separate download step.
         run: |
+          set -euo pipefail
           PLATFORM="${{ matrix.platform }}"
           VERSION="${{ needs.validate.outputs.version }}"
           ARCHIVE="uplink-nodejs-v${VERSION}-${PLATFORM}.tar.gz"
           PREBUILD_DIR="native/prebuilds/${PLATFORM}"
           INCLUDE_DIR="native/include"
 
+          # Verify inputs exist
+          if [ ! -d "${PREBUILD_DIR}" ]; then
+            echo "ERROR: prebuilds dir not found: ${PREBUILD_DIR}"
+            exit 1
+          fi
+          if [ ! -f "${INCLUDE_DIR}/uplink.h" ]; then
+            echo "ERROR: headers not found in ${INCLUDE_DIR}/"
+            echo "Contents of native/include/:"
+            ls -la native/include/ 2>/dev/null || echo "(directory missing)"
+            exit 1
+          fi
+
           # Stage a temp dir with the desired archive layout
           STAGE=$(mktemp -d)
-          cp "${PREBUILD_DIR}"/* "${STAGE}/"
+
+          # Copy binaries (exclude any subdirectories like 'include' if present)
+          find "${PREBUILD_DIR}" -maxdepth 1 -type f -exec cp {} "${STAGE}/" \;
+
+          # Copy headers into include/ subdirectory
           mkdir -p "${STAGE}/include"
-          cp "${INCLUDE_DIR}"/uplink.h \
-             "${INCLUDE_DIR}"/uplink_definitions.h \
-             "${INCLUDE_DIR}"/uplink_compat.h \
+          cp "${INCLUDE_DIR}/uplink.h" \
+             "${INCLUDE_DIR}/uplink_definitions.h" \
+             "${INCLUDE_DIR}/uplink_compat.h" \
              "${STAGE}/include/"
 
           tar -czvf "${ARCHIVE}" -C "${STAGE}" .
-          echo "Archive contents:"
+          echo ""
+          echo "=== Archive contents ==="
           tar -tzvf "${ARCHIVE}"
         shell: bash
 
