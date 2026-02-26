@@ -1,6 +1,6 @@
 # <b>storj-uplink-nodejs binding</b>
 
-#### *Node.js native bindings for Storj's uplink-c library — v0.1.0-beta.20*
+#### *Node.js native bindings for Storj's uplink-c library — v0.1.0-beta.21*
 
 A modern, TypeScript-first binding using pure C + Node-API (N-API) for connecting to the Storj decentralized cloud storage network. Prebuilt binaries are available for macOS, Linux, and Windows — no Go toolchain required for most installs.
 
