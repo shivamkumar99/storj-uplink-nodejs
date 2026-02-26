@@ -540,7 +540,7 @@ ADDON_VERSION ?= $(shell node -p "require('./package.json').version" 2>/dev/null
 # GitHub repository for prebuilt binaries
 # Override with: make install-hybrid GITHUB_OWNER=your-username
 GITHUB_OWNER ?= shivamkumar99
-GITHUB_REPO ?= uplink-node-test
+GITHUB_REPO ?= storj-uplink-nodejs
 
 # Download URLs (pointing to your repository's releases)
 # The prebuilt uplink-c library will be hosted on your repo

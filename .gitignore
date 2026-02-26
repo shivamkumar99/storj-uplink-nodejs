@@ -35,8 +35,13 @@ test/output/
 # Binary distribution artifacts
 .downloads/
 .uplink-c-build/
-native/prebuilds/
-native/include/
+
+# native/include/ and native/prebuilds/ are intentionally tracked:
+# - native/include/ contains the upstream uplink-c headers needed to compile
+#   the addon. They are patched for MSVC compat and committed so that npm
+#   install (hybrid path) can run node-gyp without a separate header download.
+# - native/prebuilds/ contains platform-specific binaries built by CI and
+#   committed for the "prebuilt-shipped" fast-install path.
 
 #
 .claude
