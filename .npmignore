@@ -1,6 +1,7 @@
-# native/include/ and native/prebuilds/ are intentionally included in the npm
-# package so that the postinstall "prebuilt-shipped" path works without any
-# compilation, and the "hybrid" path has headers available for node-gyp.
+# native/include/ and native/prebuilds/ are downloaded at install time (postinstall).
+# They must NOT be in the npm package — they are platform-specific and generated.
+native/include/
+native/prebuilds/
 
 # Exclude test, scripts, and other dev files
 test/

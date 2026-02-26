@@ -732,8 +732,47 @@ endif
 		 echo "Try: make install-hybrid" && exit 1)
 	$(Q)echo "Extracting to $(PLATFORM_DIR)..."
 	$(Q)tar -xzf "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)" -C "$(PLATFORM_DIR)"
+	$(Q)echo "Installing headers from archive..."
+	$(call MKDIR,$(INCLUDE_DIR))
+	$(Q)if [ -d "$(PLATFORM_DIR)/include" ]; then \
+		cp -f "$(PLATFORM_DIR)/include"/*.h "$(INCLUDE_DIR)/" && \
+		rm -rf "$(PLATFORM_DIR)/include" && \
+		echo "  ✓ Headers installed to $(INCLUDE_DIR)"; \
+	else \
+		echo "  (no include/ in archive — skipping header install)"; \
+	fi
 	$(Q)rm -f "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)"
 	$(Q)echo "✓ Downloaded $(NODE_ADDON)"
+
+# Download headers only from the addon release archive (for hybrid builds).
+# The addon archive contains an include/ subdirectory with the uplink-c headers
+# (patched for MSVC compat). This target extracts only that subdirectory into
+# native/include/ without extracting the binary files.
+.PHONY: download-headers
+download-headers: $(INCLUDE_DIR) $(DOWNLOAD_DIR) check-curl
+	$(Q)echo "══════════════════════════════════════════════════════════════"
+	$(Q)echo "  Downloading headers (from addon archive v$(ADDON_VERSION))"
+	$(Q)echo "══════════════════════════════════════════════════════════════"
+	$(Q)if [ -f "$(INCLUDE_DIR)/uplink.h" ]; then \
+		echo "Headers already exist: $(INCLUDE_DIR)/uplink.h"; \
+		echo "Use FORCE_DOWNLOAD=1 to re-download"; \
+	else \
+		echo "URL: $(ADDON_RELEASE_URL)/v$(ADDON_VERSION)/$(ADDON_ARCHIVE)"; \
+		curl $(CURL_QUIET) -L -f \
+			"$(ADDON_RELEASE_URL)/v$(ADDON_VERSION)/$(ADDON_ARCHIVE)" \
+			-o "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)" || \
+			(echo "ERROR: Header download failed. Cannot build addon without headers." && exit 1); \
+		tar -xzf "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)" -C "$(INCLUDE_DIR)" \
+			--wildcards "*/include/*.h" --strip-components=2 2>/dev/null || \
+		tar -xzf "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)" -C "$(INCLUDE_DIR)" \
+			include/*.h --strip-components=1 2>/dev/null || true; \
+		rm -f "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)"; \
+		if [ -f "$(INCLUDE_DIR)/uplink.h" ]; then \
+			echo "  ✓ Headers installed to $(INCLUDE_DIR)"; \
+		else \
+			echo "  WARNING: uplink.h not found after extraction — build may fail"; \
+		fi; \
+	fi
 
 # ------------------------------------------------------------------------------
 # Clone uplink-c from GitHub
@@ -881,14 +920,17 @@ install-hybrid:
 	$(Q)echo ""
 	@$(MAKE) check-hybrid-prereqs
 	$(Q)echo ""
-	$(Q)echo "[1/3] Downloading uplink-c library..."
+	$(Q)echo "[1/4] Downloading uplink-c library..."
 	@$(MAKE) download-lib
 	$(Q)echo ""
-	$(Q)echo "[2/3] Building Node addon..."
+	$(Q)echo "[2/4] Downloading headers (needed for compilation)..."
+	@$(MAKE) download-headers
+	$(Q)echo ""
+	$(Q)echo "[3/4] Building Node addon..."
 	@$(MAKE) build-native
 	@$(MAKE) copy-addon-to-prebuilds
 	$(Q)echo ""
-	$(Q)echo "[3/3] Verifying installation..."
+	$(Q)echo "[4/4] Verifying installation..."
 ifneq ($(SKIP_VERIFY),1)
 	@$(MAKE) verify-full
 endif

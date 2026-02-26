@@ -81,9 +81,7 @@
   "homepage": "https://github.com/shivamkumar99/uplink-node-test#readme",
   "files": [
     "dist",
-    "native/include",
     "native/src",
-    "native/prebuilds",
     "scripts/gen-def.js",
     "Makefile",
     "binding.gyp",

@@ -32,16 +32,11 @@ npm-debug.log*
 test/memory/results/
 test/output/
 
-# Binary distribution artifacts
+# Binary distribution artifacts — downloaded/generated at install time
 .downloads/
 .uplink-c-build/
-
-# native/include/ and native/prebuilds/ are intentionally tracked:
-# - native/include/ contains the upstream uplink-c headers needed to compile
-#   the addon. They are patched for MSVC compat and committed so that npm
-#   install (hybrid path) can run node-gyp without a separate header download.
-# - native/prebuilds/ contains platform-specific binaries built by CI and
-#   committed for the "prebuilt-shipped" fast-install path.
+native/prebuilds/
+native/include/
 
 #
 .claude
