@@ -762,15 +762,21 @@ download-headers: $(INCLUDE_DIR) $(DOWNLOAD_DIR) check-curl
 			"$(ADDON_RELEASE_URL)/v$(ADDON_VERSION)/$(ADDON_ARCHIVE)" \
 			-o "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)" || \
 			(echo "ERROR: Header download failed. Cannot build addon without headers." && exit 1); \
-		tar -xzf "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)" -C "$(INCLUDE_DIR)" \
-			--wildcards "*/include/*.h" --strip-components=2 2>/dev/null || \
-		tar -xzf "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)" -C "$(INCLUDE_DIR)" \
-			include/*.h --strip-components=1 2>/dev/null || true; \
-		rm -f "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)"; \
-		if [ -f "$(INCLUDE_DIR)/uplink.h" ]; then \
+		EXTRACT_TMP="$(DOWNLOAD_DIR)/hdr-extract"; \
+		rm -rf "$$EXTRACT_TMP" && mkdir -p "$$EXTRACT_TMP"; \
+		tar -xzf "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)" -C "$$EXTRACT_TMP"; \
+		if [ -d "$$EXTRACT_TMP/include" ]; then \
+			cp -f "$$EXTRACT_TMP/include"/*.h "$(INCLUDE_DIR)/"; \
 			echo "  ✓ Headers installed to $(INCLUDE_DIR)"; \
 		else \
-			echo "  WARNING: uplink.h not found after extraction — build may fail"; \
+			echo "  WARNING: no include/ dir found in archive — build may fail"; \
+		fi; \
+		rm -rf "$$EXTRACT_TMP"; \
+		rm -f "$(DOWNLOAD_DIR)/$(ADDON_ARCHIVE)"; \
+		if [ -f "$(INCLUDE_DIR)/uplink.h" ]; then \
+			echo "  ✓ $(INCLUDE_DIR)/uplink.h ready"; \
+		else \
+			echo "  ERROR: uplink.h not found after extraction" && exit 1; \
 		fi; \
 	fi
 
@@ -1024,15 +1030,23 @@ install-auto:
 		|| ( \
 			echo "[uplink-nodejs] ✗ Prebuilt shipped binaries not available"; \
 			echo ""; \
-			echo "[uplink-nodejs] Step 2: Trying hybrid build (download lib + compile addon)..."; \
-			$(MAKE) install-hybrid 2>&1 \
+			echo "[uplink-nodejs] Step 2: Trying full prebuilt download (lib + addon, no compilation)..."; \
+			$(MAKE) install-prebuilt 2>&1 \
 			&& echo "" \
-			&& echo "[uplink-nodejs] ✓ Hybrid build — success" \
+			&& echo "[uplink-nodejs] ✓ Full prebuilt download — success" \
 			|| ( \
-				echo "[uplink-nodejs] ✗ Hybrid build failed"; \
+				echo "[uplink-nodejs] ✗ Prebuilt download failed"; \
 				echo ""; \
-				echo "[uplink-nodejs] Step 3: Trying full source build..."; \
-				$(MAKE) install-source \
+				echo "[uplink-nodejs] Step 3: Trying hybrid build (download lib + compile addon)..."; \
+				$(MAKE) install-hybrid 2>&1 \
+				&& echo "" \
+				&& echo "[uplink-nodejs] ✓ Hybrid build — success" \
+				|| ( \
+					echo "[uplink-nodejs] ✗ Hybrid build failed"; \
+					echo ""; \
+					echo "[uplink-nodejs] Step 4: Trying full source build..."; \
+					$(MAKE) install-source \
+				) \
 			) \
 		)
 

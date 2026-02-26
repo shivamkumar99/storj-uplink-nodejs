@@ -1,6 +1,6 @@
 {
   "name": "storj-uplink-nodejs",
-  "version": "0.1.0-beta.18",
+  "version": "0.1.0-beta.19",
   "description": "Node.js bindings for Storj's uplink-c library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -55,7 +55,7 @@
     "security:licenses": "npx license-checker --production --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD'",
     "security:all": "npm run security && npm run security:c && npm run security:secrets && npm run security:licenses",
     "prepublishOnly": "npm run lint && npm run build && npm run test:unit",
-    "postinstall": "make install || (echo \"\\n[uplink-nodejs] ERROR: 'make' was not found or failed.\\n'make' is a required prerequisite to build the native addon.\\n\\nPlease install it before running npm install:\\n  Linux:   sudo apt install build-essential\\n  macOS:   xcode-select --install\\n  Windows: Install MinGW/MSYS2 (https://www.msys2.org) and ensure 'make' is in PATH\\n\" && exit 1)",
+    "postinstall": "make install VERBOSE=1 || (echo \"\\n[uplink-nodejs] ERROR: 'make' was not found or failed.\\n'make' is a required prerequisite to build the native addon.\\n\\nPlease install it before running npm install:\\n  Linux:   sudo apt install build-essential\\n  macOS:   xcode-select --install\\n  Windows: Install MinGW/MSYS2 (https://www.msys2.org) and ensure 'make' is in PATH\\n\" && exit 1)",
     "install:source": "UPLINK_INSTALL=source make install",
     "install:hybrid": "UPLINK_INSTALL=hybrid make install",
     "install:prebuilt": "UPLINK_INSTALL=prebuilt make install",
