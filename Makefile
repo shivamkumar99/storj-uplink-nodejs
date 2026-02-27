@@ -268,7 +268,7 @@ install-hybrid: check-curl check-compiler check-python $(PLATFORM_DIR) $(INCLUDE
 	fi
 	$(Q)echo ""
 	$(Q)echo "Compiling uplink_native.node ..."
-	$(Q)node-gyp rebuild
+	$(Q)npx --no node-gyp rebuild
 	$(Q)cp -f "$(BUILD_DIR)/Release/$(NODE_ADDON)" "$(PLATFORM_DIR)/$(NODE_ADDON)"
 	$(Q)echo "  Addon    -> $(PLATFORM_DIR)/$(NODE_ADDON)"
 	@$(MAKE) _verify
@@ -316,7 +316,7 @@ install-source: check-go check-git check-compiler check-python $(PLATFORM_DIR) $
 	@$(MAKE) generate-import-lib
 	$(Q)echo ""
 	$(Q)echo "[3/3] Compiling uplink_native.node ..."
-	$(Q)node-gyp rebuild
+	$(Q)npx --no node-gyp rebuild
 	$(Q)cp -f "$(BUILD_DIR)/Release/$(NODE_ADDON)" "$(PLATFORM_DIR)/$(NODE_ADDON)"
 	$(Q)echo "  Addon    -> $(PLATFORM_DIR)/$(NODE_ADDON)"
 	@$(MAKE) _verify
@@ -483,7 +483,7 @@ build-ts:
 # Build native addon only (requires headers + lib already in place)
 .PHONY: build-native
 build-native:
-	node-gyp rebuild
+	npx --no node-gyp rebuild
 
 # Build TypeScript + native addon
 .PHONY: build
