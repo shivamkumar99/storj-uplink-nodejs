@@ -1,6 +1,6 @@
 {
   "name": "storj-uplink-nodejs",
-  "version": "0.1.0-beta.21",
+  "version": "0.1.0-beta.22",
   "description": "Node.js bindings for Storj's uplink-c library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
