@@ -104,6 +104,9 @@ UPLINK_C_SRC_DIR := $(PROJECT_DIR)/.uplink-c-build
 
 NODE_ADDON       := uplink_native.node
 
+# node-gyp: prefer the local devDependency over any globally installed version
+NODE_GYP         := $(PROJECT_DIR)/node_modules/.bin/node-gyp
+
 # uplink-c to clone / build from source
 UPLINK_C_REPO    := https://github.com/storj/uplink-c.git
 
@@ -268,7 +271,7 @@ install-hybrid: check-curl check-compiler check-python $(PLATFORM_DIR) $(INCLUDE
 	fi
 	$(Q)echo ""
 	$(Q)echo "Compiling uplink_native.node ..."
-	$(Q)npx --no node-gyp rebuild
+	$(Q)$(NODE_GYP) rebuild
 	$(Q)cp -f "$(BUILD_DIR)/Release/$(NODE_ADDON)" "$(PLATFORM_DIR)/$(NODE_ADDON)"
 	$(Q)echo "  Addon    -> $(PLATFORM_DIR)/$(NODE_ADDON)"
 	@$(MAKE) _verify
@@ -316,7 +319,7 @@ install-source: check-go check-git check-compiler check-python $(PLATFORM_DIR) $
 	@$(MAKE) generate-import-lib
 	$(Q)echo ""
 	$(Q)echo "[3/3] Compiling uplink_native.node ..."
-	$(Q)npx --no node-gyp rebuild
+	$(Q)$(NODE_GYP) rebuild
 	$(Q)cp -f "$(BUILD_DIR)/Release/$(NODE_ADDON)" "$(PLATFORM_DIR)/$(NODE_ADDON)"
 	$(Q)echo "  Addon    -> $(PLATFORM_DIR)/$(NODE_ADDON)"
 	@$(MAKE) _verify
@@ -483,7 +486,7 @@ build-ts:
 # Build native addon only (requires headers + lib already in place)
 .PHONY: build-native
 build-native:
-	npx --no node-gyp rebuild
+	$(NODE_GYP) rebuild
 
 # Build TypeScript + native addon
 .PHONY: build
