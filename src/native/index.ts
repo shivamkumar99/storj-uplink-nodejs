@@ -250,29 +250,27 @@ function loadNativeModule(): NativeModule {
   );
   const buildPath = path.join(__dirname, '..', '..', 'build', 'Release', 'uplink_native.node');
 
-  let lastError: unknown;
-
   // Try prebuilt first (Option 3: no compilation needed)
   try {
     return loadAddon(prebuiltPath);
-  } catch (_prebuiltErr: unknown) {
+  } catch {
     // Prebuilt not available — fall through to local build
-    lastError = _prebuiltErr;
   }
 
   // Try local build (Option 1/2: compiled via node-gyp)
+  // Capture the error here — this is the last resort and its message is meaningful
+  let buildError: unknown;
   try {
     return loadAddon(buildPath);
-  } catch (_buildErr: unknown) {
-    // Both failed — throw helpful error below
-    lastError = _buildErr;
+  } catch (err: unknown) {
+    buildError = err;
   }
 
   throw new Error(
     'Failed to load uplink native module. No prebuilt binary found for ' +
       `${platform}, and no local build at build/Release/. ` +
       'Run "make install-prebuilt" (no compiler) or "make install-hybrid" (requires C compiler) ' +
-      `or "make install-source" (requires Go + C compiler). Last error: ${lastError}`
+      `or "make install-source" (requires Go + C compiler). Last error: ${buildError}`
   );
 }
 

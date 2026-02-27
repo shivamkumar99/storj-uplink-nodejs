@@ -41,7 +41,8 @@ describe('Integration: Upload Operations', () => {
     }
 
     const passphrase = process.env.TEST_PASSPHRASE;
-    console.log(`🔑 Encryption passphrase: "${passphrase ?? '(using access grant)'}"`);
+    // Log only whether a passphrase is set, never its value
+    console.log(`🔑 Encryption passphrase: ${passphrase != null ? '(set)' : '(using access grant)'}`);
 
     uplink = new Uplink();
     access = await getAccess(uplink);
@@ -475,9 +476,22 @@ describe('Integration: Upload Operations', () => {
     // Verify size
     expect(downloadOffset).toBe(downloadSize);
 
-    // Read back both files and compare byte-for-byte
-    const originalFile = fs.readFileSync(uploadedPath);
-    const downloadedFile = fs.readFileSync(downloadedPath);
+    // Read back both files and compare byte-for-byte.
+    // Open via fd to avoid TOCTOU: the fd is obtained atomically and the same
+    // inode is read regardless of any subsequent rename/replace on the path.
+    const readViaFd = (filePath: string): Buffer => {
+      const fd = fs.openSync(filePath, 'r');
+      try {
+        const { size } = fs.fstatSync(fd);
+        const buf = Buffer.allocUnsafe(size);
+        fs.readSync(fd, buf, 0, size, 0);
+        return buf;
+      } finally {
+        fs.closeSync(fd);
+      }
+    };
+    const originalFile = readViaFd(uploadedPath);
+    const downloadedFile = readViaFd(downloadedPath);
     expect(downloadedFile.length).toBe(originalFile.length);
     expect(downloadedFile.equals(originalFile)).toBe(true);
 

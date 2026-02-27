@@ -11,6 +11,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#ifndef _WIN32
+#include <fcntl.h>
+#include <sys/stat.h>
+#endif
 
 static LogLevel current_level = LOG_LEVEL_INFO;
 static FILE* log_file = NULL;
@@ -62,10 +66,20 @@ void logger_init(void) {
         }
     }
     
-    /* Check for log file */
+    /* Check for log file — open with restricted permissions (owner rw only) */
     const char* env_file = getenv("UPLINK_LOG_FILE");
     if (env_file != NULL) {
+#ifdef _WIN32
         log_file = fopen(env_file, "a");
+#else
+        /* Reject paths containing ".." to prevent traversal attacks */
+        if (strstr(env_file, "..") == NULL) {
+            int fd = open(env_file, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+            if (fd >= 0) {
+                log_file = fdopen(fd, "a");
+            }
+        }
+#endif
     }
     
     initialized = 1;
@@ -84,10 +98,20 @@ void logger_set_level(LogLevel level) {
 }
 
 void logger_set_file(const char* path) {
+    if (path == NULL) return;
     if (log_file != NULL) {
         fclose(log_file);
+        log_file = NULL;
     }
+#ifdef _WIN32
     log_file = fopen(path, "a");
+#else
+    /* Open with restricted permissions (owner rw only) to avoid world-writable file */
+    int fd = open(path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+    if (fd >= 0) {
+        log_file = fdopen(fd, "a");
+    }
+#endif
 }
 
 void logger_log(LogLevel level, const char* file, int line, 
@@ -95,9 +119,16 @@ void logger_log(LogLevel level, const char* file, int line,
     if (!initialized) logger_init();
     if (level > current_level) return;
     
-    /* Get timestamp */
+    /* Get timestamp — use localtime_r (thread-safe, POSIX) on POSIX systems */
     time_t now = time(NULL);
-    const struct tm* tm_info = localtime(&now);
+    struct tm tm_buf;
+#ifdef _WIN32
+    struct tm* tm_info = localtime(&now); /* Windows: single-threaded addon, acceptable */
+    if (tm_info == NULL) return;
+#else
+    struct tm* tm_info = localtime_r(&now, &tm_buf);
+    if (tm_info == NULL) return;
+#endif
     char timestamp[20];
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", tm_info);
     

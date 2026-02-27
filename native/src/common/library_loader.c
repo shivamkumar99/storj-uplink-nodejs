@@ -95,10 +95,15 @@ int load_uplink_library(void) {
     const char* platform_dir = get_platform_dir();
     const char* lib_name = "libuplink" LIB_EXT;
     
-    /* Try 1: Environment variable path */
+    /* Try 1: Environment variable path — validate before use to prevent path injection */
     const char* env_path = getenv("UPLINK_LIBRARY_PATH");
-    if (env_path != NULL) {
-        if (try_load_library(env_path) == 0) return 0;
+    if (env_path != NULL && env_path[0] != '\0') {
+        /* Reject paths containing ".." to prevent directory traversal */
+        if (strstr(env_path, "..") != NULL) {
+            LOG_ERROR("UPLINK_LIBRARY_PATH rejected: contains '..' traversal sequence");
+        } else {
+            if (try_load_library(env_path) == 0) return 0;
+        }
     }
     
     /* Try 2: native/prebuilds/<platform>/ */
