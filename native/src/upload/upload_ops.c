@@ -264,9 +264,10 @@ static int extract_upload_metadata_from_js(napi_env env, napi_value js_meta,
         extract_string(env, value_val, &value);
 
         entries[i].key = key;
-        entries[i].key_length = key ? strlen(key) : 0;
+        /* Use strnlen to guard against non-null-terminated strings (CWE-126) */
+        entries[i].key_length = key ? strnlen(key, 1024) : 0;
         entries[i].value = value;
-        entries[i].value_length = value ? strlen(value) : 0;
+        entries[i].value_length = value ? strnlen(value, 65536) : 0;
     }
 
     *out_entries = entries;

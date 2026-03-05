@@ -9,8 +9,8 @@ const SATELLITE = process.env.TEST_SATELLITE;
 const API_KEY = process.env.TEST_API_KEY;
 const PASSPHRASE = process.env.TEST_PASSPHRASE;
 const BUCKET = process.env.TEST_BUCKET || 'example-multipart-bucket';
-const FILE_PATH = process.env.UPLOAD_FILE_PATH || path.resolve(__dirname, 'large.txt');
-const OBJECT_KEY = process.env.UPLOAD_OBJECT_KEY || 'multipart-upload.txt';
+const FILE_PATH = process.env.UPLOAD_FILE_PATH || path.resolve(__dirname, 'upload-video.mp4');
+const OBJECT_KEY = process.env.UPLOAD_OBJECT_KEY || 'multipart-upload-download.mp4';
 
 async function main() {
   if (!SATELLITE || !API_KEY || !PASSPHRASE) {
@@ -22,7 +22,6 @@ async function main() {
   await project.ensureBucket(BUCKET);
 
   const mp = await beginMultipartUpload(project._nativeHandle, BUCKET, OBJECT_KEY);
-  const fileSize = fs.statSync(FILE_PATH).size;
   const stream = fs.createReadStream(FILE_PATH, { highWaterMark: 5 * 1024 * 1024 }); // 5MB chunks
   let partNumber = 1;
   let total = 0;
@@ -34,7 +33,7 @@ async function main() {
     total += chunk.length;
     partNumber++;
   }
-  const info = await mp.commit();
+  await mp.commit();
   console.log(`Multipart upload complete: ${OBJECT_KEY} (${total} bytes)`);
   await project.close();
 }

@@ -26,7 +26,7 @@ const uplink = new Uplink();
 
 ## requestAccessWithPassphrase(satellite, apiKey, passphrase)
 
-### Description:
+**Description:**
 
 Requests a new access grant from a Storj satellite using a passphrase.\
 No pre-requisites required. This is the most common way to connect to Storj.\
@@ -34,7 +34,7 @@ Returns an `AccessResultStruct` that can be used to open a project or share acce
 
 An access grant is an internally serialized structure comprising an API key, a set of encryption key information, and the satellite address responsible for the metadata.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -42,7 +42,7 @@ An access grant is an internally serialized structure comprising an API key, a s
 | `apiKey` | Storj API key from the console | `string` |
 | `passphrase` | Encryption passphrase — keep this secret! | `string` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const satellite = "us1.storj.io:7777";
@@ -64,13 +64,13 @@ const access = await uplink.requestAccessWithPassphrase(satellite, apiKey, passp
 
 ## configRequestAccessWithPassphrase(config, satellite, apiKey, passphrase)
 
-### Description:
+**Description:**
 
 Requests a new access grant with a custom config object.\
 Useful when you need to set a custom user agent, dial timeout, or temp directory.\
 Returns an `AccessResultStruct` on success.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -79,7 +79,7 @@ Returns an `AccessResultStruct` on success.
 | `apiKey` | Storj API key | `string` |
 | `passphrase` | Encryption passphrase | `string` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const config = {
@@ -102,20 +102,20 @@ uplink.configRequestAccessWithPassphrase(config, satellite, apiKey, passphrase).
 
 ## parseAccess(accessGrant)
 
-### Description:
+**Description:**
 
 Parses a serialized access grant string.\
 This is the main way to instantiate an access grant that was previously serialized (e.g. shared with another user).\
 No pre-requisites required.\
 Returns an `AccessResultStruct` on success.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `accessGrant` | Serialized access grant string (returned by `access.serialize()`) | `string` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const accessGrant = "1J5F2Kxxxxxxxxxxxxxxxxxxxxxxxx"; // serialized access string
@@ -131,13 +131,13 @@ uplink.parseAccess(accessGrant).then(async (access) => {
 
 ## uplinkDeriveEncryptionKey(passphrase, salt, length)
 
-### Description:
+**Description:**
 
 Derives a salted encryption key from a passphrase using the given salt.\
 Useful for multi-tenancy: derive per-user encryption keys in a single shared bucket.\
 Returns an `EncryptionKey` object.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -145,7 +145,7 @@ Returns an `EncryptionKey` object.
 | `salt` | Salt as a byte array | `number[]` |
 | `length` | Length of key to derive | `number` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const encryptionKey = await uplink.uplinkDeriveEncryptionKey("my-passphrase", [4, 5, 6, 7], 32)
@@ -162,21 +162,21 @@ const encryptionKey = await uplink.uplinkDeriveEncryptionKey("my-passphrase", [4
 
 ## share(permission, prefixes)
 
-### Description:
+**Description:**
 
 Creates a new access grant with restricted permissions.\
 `parseAccess` or `requestAccessWithPassphrase` is required as a pre-requisite.\
 Permissions will be applied to the specified prefixes.\
 Returns a new `AccessResultStruct` with the restricted access.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `permission` | Permission object defining allowed actions | `object` |
 | `prefixes` | Array of `SharePrefix` objects defining what to share | `SharePrefix[]` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const permission = {
@@ -203,13 +203,13 @@ await access.share(permission, prefixes).then(async (sharedAccess) => {
 
 ## serialize()
 
-### Description:
+**Description:**
 
 Serializes the access grant into a string that can be shared or stored.\
 `requestAccessWithPassphrase`, `parseAccess`, or `share` is required as a pre-requisite.\
 Returns a serialized access grant string.
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 await access.serialize().then((serializedString) => {
@@ -223,13 +223,13 @@ await access.serialize().then((serializedString) => {
 
 ## openProject()
 
-### Description:
+**Description:**
 
 Opens a Storj project using the access grant.\
 `requestAccessWithPassphrase` or `configRequestAccessWithPassphrase` is required as a pre-requisite.\
 Returns a `ProjectResultStruct` that allows managing buckets and objects.
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 access.openProject().then(async (project) => {
@@ -243,19 +243,19 @@ access.openProject().then(async (project) => {
 
 ## configOpenProject(config)
 
-### Description:
+**Description:**
 
 Opens a project with a custom configuration.\
 `requestAccessWithPassphrase` or similar is required as a pre-requisite.\
 Returns a `ProjectResultStruct`.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `config` | Uplink configuration object | `object` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const config = { userAgent: "MyApp/1.0" };
@@ -270,13 +270,13 @@ access.configOpenProject(config).then(async (project) => {
 
 ## overrideEncryptionKey(bucket, prefix, encryptionKey)
 
-### Description:
+**Description:**
 
 Overrides the root encryption key for the specified prefix in a bucket.\
 Useful for multi-tenancy: allows per-user encryption in a single shared bucket.\
 `parseAccess` is required as a pre-requisite.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -284,7 +284,7 @@ Useful for multi-tenancy: allows per-user encryption in a single shared bucket.\
 | `prefix` | Object key prefix | `string` |
 | `encryptionKey` | EncryptionKey object from `uplinkDeriveEncryptionKey` | `object` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const encryptionKey = await uplink.uplinkDeriveEncryptionKey("user-passphrase", [1, 2, 3], 32);
@@ -302,13 +302,13 @@ await access.overrideEncryptionKey("my-bucket", "user-123/", encryptionKey)
 
 ## close()
 
-### Description:
+**Description:**
 
 Closes the project and releases resources.\
 `openProject` or `configOpenProject` is required as a pre-requisite.\
 Always call this when done, preferably in a `finally` block.
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 await project.close().then(() => {
@@ -322,19 +322,19 @@ await project.close().then(() => {
 
 ## statBucket(bucketName)
 
-### Description:
+**Description:**
 
 Returns information about a bucket.\
 `openProject` is required as a pre-requisite.\
 Returns a `BucketInfo` object with the bucket's name and creation time.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `bucketName` | Storj bucket name | `string` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const bucketName = "change-me-to-desired-bucket-name";
@@ -349,19 +349,19 @@ await project.statBucket(bucketName).then((bucketInfo) => {
 
 ## ensureBucket(bucketName)
 
-### Description:
+**Description:**
 
 Creates a new bucket, or silently succeeds if the bucket already exists.\
 `openProject` is required as a pre-requisite.\
 Returns a `BucketInfo` object.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `bucketName` | Bucket name on Storj V3 network | `string` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const bucketName = "change-me-to-desired-bucket-name";
@@ -376,20 +376,20 @@ await project.ensureBucket(bucketName).then((bucketInfo) => {
 
 ## createBucket(bucketName)
 
-### Description:
+**Description:**
 
 Creates a new bucket.\
 When the bucket already exists, returns the existing bucket info and throws `BucketAlreadyExistsError`.\
 `openProject` is required as a pre-requisite.\
 Returns a `BucketInfo` object.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `bucketName` | Bucket name to create | `string` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const bucketName = "change-me-to-desired-bucket-name";
@@ -404,19 +404,19 @@ await project.createBucket(bucketName).then((bucketInfo) => {
 
 ## deleteBucket(bucketName)
 
-### Description:
+**Description:**
 
 Deletes a bucket.\
 When the bucket is not empty, throws `BucketNotEmptyError`.\
 `openProject` is required as a pre-requisite.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `bucketName` | Bucket name to delete | `string` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const bucketName = "change-me-to-desired-bucket-name";
@@ -431,19 +431,19 @@ await project.deleteBucket(bucketName).then(() => {
 
 ## listBuckets(options?)
 
-### Description:
+**Description:**
 
 Lists all buckets in the project.\
 `openProject` is required as a pre-requisite.\
 Returns an array of `BucketInfo` objects.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `options` | Optional listing options (cursor for pagination) | `ListBucketsOptions` (optional) |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 // List all buckets (no options)
@@ -460,20 +460,20 @@ const buckets = await project.listBuckets({ cursor: "my-last-bucket" });
 
 ## statObject(bucketName, objectKey)
 
-### Description:
+**Description:**
 
 Returns information about an object at the specified key.\
 `openProject` is required as a pre-requisite.\
 Returns an `ObjectInfo` object.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `bucketName` | Bucket name on Storj V3 network | `string` |
 | `objectKey` | Object key (path) on Storj V3 network | `string` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const bucketName = "change-me-to-desired-bucket-name";
@@ -490,20 +490,20 @@ await project.statObject(bucketName, objectKey).then((objectInfo) => {
 
 ## listObjects(bucketName, options?)
 
-### Description:
+**Description:**
 
 Lists objects in a bucket.\
 `openProject` is required as a pre-requisite.\
 Returns an array of `ObjectInfo` objects.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `bucketName` | Bucket name on Storj V3 network | `string` |
 | `options` | Optional listing options | `ListObjectsOptions` (optional) |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const bucketName = "change-me-to-desired-bucket-name";
@@ -529,13 +529,13 @@ const objects = await project.listObjects(bucketName, {
 
 ## uploadObject(bucketName, objectKey, options?)
 
-### Description:
+**Description:**
 
 Starts an upload to the specified key.\
 `openProject` is required as a pre-requisite.\
 Returns an `UploadResultStruct` that must be written to and then committed (or aborted).
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -543,7 +543,7 @@ Returns an `UploadResultStruct` that must be written to and then committed (or a
 | `objectKey` | Object key (path) to upload to | `string` |
 | `options` | Optional upload options (e.g. expiry) | `UploadOptions` (optional) |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const bucketName = "change-me-to-desired-bucket-name";
@@ -567,13 +567,13 @@ const upload = await project.uploadObject(bucketName, objectKey, {
 
 ## downloadObject(bucketName, objectKey, options?)
 
-### Description:
+**Description:**
 
 Starts a download from the specified key.\
 `openProject` is required as a pre-requisite.\
 Returns a `DownloadResultStruct` that must be read from and then closed.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -581,7 +581,7 @@ Returns a `DownloadResultStruct` that must be read from and then closed.
 | `objectKey` | Object key (path) to download | `string` |
 | `options` | Optional download options (offset, length) | `DownloadOptions` (optional) |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const bucketName = "change-me-to-desired-bucket-name";
@@ -609,20 +609,20 @@ const download = await project.downloadObject(bucketName, objectKey, {
 
 ## deleteObject(bucketName, objectKey)
 
-### Description:
+**Description:**
 
 Deletes an object at the specified key.\
 `openProject` is required as a pre-requisite.\
 Returns an `ObjectInfo` of the deleted object.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `bucketName` | Bucket name on Storj V3 network | `string` |
 | `objectKey` | Object key (path) to delete | `string` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const bucketName = "change-me-to-desired-bucket-name";
@@ -638,13 +638,13 @@ await project.deleteObject(bucketName, objectKey).then((objectInfo) => {
 
 ## copyObject(srcBucket, srcKey, dstBucket, dstKey, options?)
 
-### Description:
+**Description:**
 
 Copies an object from one location to another.\
 `openProject` is required as a pre-requisite.\
 Returns an `ObjectInfo` of the new object.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -654,7 +654,7 @@ Returns an `ObjectInfo` of the new object.
 | `dstKey` | Destination object key | `string` |
 | `options` | Optional copy options (expiry) | `CopyObjectOptions` (optional) |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 await project.copyObject("src-bucket", "original.txt", "dst-bucket", "copy.txt")
@@ -669,12 +669,12 @@ await project.copyObject("src-bucket", "original.txt", "dst-bucket", "copy.txt")
 
 ## moveObject(srcBucket, srcKey, dstBucket, dstKey, options?)
 
-### Description:
+**Description:**
 
 Moves (renames) an object from one location to another.\
 `openProject` is required as a pre-requisite.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -684,7 +684,7 @@ Moves (renames) an object from one location to another.\
 | `dstKey` | Destination object key | `string` |
 | `options` | Optional move options | `MoveObjectOptions` (optional) |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 await project.moveObject("my-bucket", "old-name.txt", "my-bucket", "new-name.txt")
@@ -701,19 +701,19 @@ await project.moveObject("my-bucket", "old-name.txt", "my-bucket", "new-name.txt
 
 ## setCustomMetadata(metadata)
 
-### Description:
+**Description:**
 
 Sets custom metadata on an object being uploaded.\
 `uploadObject` is required as a pre-requisite.\
 Must be called before `commit()`.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `metadata` | Custom key-value metadata object | `CustomMetadata` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const upload = await project.uploadObject("my-bucket", "photo.jpg");
@@ -734,20 +734,20 @@ await upload.commit();
 
 ## write(buffer, length)
 
-### Description:
+**Description:**
 
 Uploads bytes from the buffer to the object's data stream.\
 `uploadObject` is required as a pre-requisite.\
 Returns the number of bytes written.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `buffer` | Buffer containing data to write | `Buffer` |
 | `length` | Number of bytes to write from the buffer | `number` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const BUFFER_SIZE = 256 * 1024; // 256 KB
@@ -765,13 +765,13 @@ await upload.write(buffer, buffer.length).then((bytesWritten) => {
 
 ## info() (on Upload)
 
-### Description:
+**Description:**
 
 Returns information about the object being uploaded.\
 `uploadObject` is required as a pre-requisite.\
 Returns an `ObjectInfo` object.
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 await upload.info().then((objectInfo) => {
@@ -785,13 +785,13 @@ await upload.info().then((objectInfo) => {
 
 ## commit()
 
-### Description:
+**Description:**
 
 Commits the upload — finalizes the data on Storj.\
 `uploadObject` is required as a pre-requisite.\
 Must be called after all `write()` calls.
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 await upload.commit().then(() => {
@@ -805,12 +805,12 @@ await upload.commit().then(() => {
 
 ## abort()
 
-### Description:
+**Description:**
 
 Aborts an in-progress upload, discarding all uploaded data.\
 `uploadObject` is required as a pre-requisite.
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 await upload.abort().then(() => {
@@ -828,20 +828,20 @@ await upload.abort().then(() => {
 
 ## read(buffer, length)
 
-### Description:
+**Description:**
 
 Downloads data from the object's data stream into the buffer.\
 `downloadObject` is required as a pre-requisite.\
 Returns a `ReadResult` with the number of bytes read.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
 | `buffer` | Buffer to read data into | `Buffer` |
 | `length` | Maximum number of bytes to read | `number` |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const buffer = Buffer.alloc(4096);
@@ -856,13 +856,13 @@ await download.read(buffer, buffer.length).then(async (result) => {
 
 ## info() (on Download)
 
-### Description:
+**Description:**
 
 Returns information about the object being downloaded.\
 `downloadObject` is required as a pre-requisite.\
 Returns an `ObjectInfo` object (including `system.contentLength` for the total size).
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 await download.info().then((objectInfo) => {
@@ -877,13 +877,13 @@ await download.info().then((objectInfo) => {
 
 ## close() (on Download)
 
-### Description:
+**Description:**
 
 Closes the download stream and releases resources.\
 `downloadObject` is required as a pre-requisite.\
 Always call this when done, preferably in a `finally` block.
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 await download.close().then(() => {
@@ -901,13 +901,13 @@ await download.close().then(() => {
 
 ## beginMultipartUpload(projectHandle, bucket, key, options?)
 
-### Description:
+**Description:**
 
 Begins a new multipart upload.\
 Multipart uploads allow uploading large files in parts — useful for resumable or parallel uploads.\
 Returns a `MultipartUpload` helper object.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -916,7 +916,7 @@ Returns a `MultipartUpload` helper object.
 | `key` | Object key | `string` |
 | `options` | Optional upload options (expiry) | `BeginUploadOptions` (optional) |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const { beginMultipartUpload } = require("storj-uplink-nodejs");
@@ -937,12 +937,12 @@ console.log("Multipart upload complete:", objectInfo.key);
 
 ## listMultipartUploads(projectHandle, bucket, options?)
 
-### Description:
+**Description:**
 
 Lists all pending (uncommitted) multipart uploads in a bucket.\
 Returns an array of `UploadInfo` objects.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -950,7 +950,7 @@ Returns an array of `UploadInfo` objects.
 | `bucket` | Bucket name | `string` |
 | `options` | Optional list options | `ListUploadsOptions` (optional) |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const { listMultipartUploads } = require("storj-uplink-nodejs");
@@ -969,12 +969,12 @@ for (const upload of uploads) {
 
 ## edgeRegisterAccess(config, accessHandle, options?)
 
-### Description:
+**Description:**
 
 Registers an access grant with Storj edge services to obtain S3-compatible credentials.\
 Returns an `EdgeCredentials` object with `accessKeyId`, `secretKey`, and `endpoint`.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -982,7 +982,7 @@ Returns an `EdgeCredentials` object with `accessKeyId`, `secretKey`, and `endpoi
 | `accessHandle` | Native access handle (`access._nativeHandle`) | `unknown` |
 | `options` | Optional options (`isPublic: true` for linkshare) | `EdgeRegisterAccessOptions` (optional) |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const { edgeRegisterAccess, EdgeRegions } = require("storj-uplink-nodejs");
@@ -1001,13 +1001,13 @@ console.log("Endpoint:", credentials.endpoint);
 
 ## edgeJoinShareUrl(baseUrl, accessKeyId, bucket, key, options?)
 
-### Description:
+**Description:**
 
 Creates a shareable linkshare URL for an object or bucket.\
 Requires an access key registered with `isPublic: true`.\
 Returns a URL string.
 
-### Arguments:
+**Arguments:**
 
 | arguments | Description | Type |
 | --- | --- | --- |
@@ -1017,7 +1017,7 @@ Returns a URL string.
 | `key` | Object key or prefix (empty string to share entire bucket) | `string` |
 | `options` | Optional options (`raw: true` to serve file directly) | `EdgeShareURLOptions` (optional) |
 
-### Usage Example:
+**Usage Example:**
 
 ```js
 const { edgeJoinShareUrl, EdgeRegions } = require("storj-uplink-nodejs");

@@ -6,6 +6,10 @@
  * uplink-c library calls. They must NOT call any N-API functions.
  */
 
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "multipart_execute.h"
 #include "multipart_types.h"
 #include "../common/buffer_helpers.h"

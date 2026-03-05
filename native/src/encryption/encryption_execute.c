@@ -18,8 +18,9 @@ void derive_key_execute(napi_env env, void* data) {
     (void)env;
     DeriveKeyData* work_data = (DeriveKeyData*)data;
     
+    /* Use strnlen to guard against non-null-terminated strings (CWE-126) */
     LOG_DEBUG("derive_key_execute: passphrase_len=%zu, salt_len=%zu",
-              strlen(work_data->passphrase), work_data->salt_length);
+              strnlen(work_data->passphrase, 4096), work_data->salt_length);
     
     /* Call uplink-c */
     work_data->result = uplink_derive_encryption_key(

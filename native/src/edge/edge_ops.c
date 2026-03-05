@@ -13,6 +13,10 @@
  * - edge_complete.c (main thread completion handlers)
  */
 
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "edge_ops.h"
 #include "edge_types.h"
 #include "edge_execute.h"

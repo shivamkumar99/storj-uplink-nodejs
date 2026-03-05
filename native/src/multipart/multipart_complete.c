@@ -449,9 +449,7 @@ void part_iterator_item_complete(napi_env env, napi_status status, void* data) {
         
         /* Free the deep copy */
         if (work_data->part != NULL) {
-            if (work_data->part->etag != NULL) {
-                free(work_data->part->etag);
-            }
+            free(work_data->part->etag);
             free(work_data->part);
         }
         

@@ -143,30 +143,16 @@ describe('E2E: Access Sharing', () => {
   });
 
   describe('Empty Permissions', () => {
-    runTest('should create a useless access with all permissions false', async () => {
-      // uplink-c allows creating an access with all permissions false.
-      // The result is a valid but useless access — no operations will succeed.
-      const shared = await ctx.access.share(
-        { allowDownload: false, allowUpload: false, allowList: false, allowDelete: false },
-        [],
-      );
-      expect(shared).toBeInstanceOf(AccessResultStruct);
-
-      // The shared access should be serializable
-      const serialized = await shared.serialize();
-      expect(typeof serialized).toBe('string');
-      expect(serialized.length).toBeGreaterThan(0);
-
-      // Verify the access is truly restricted — opening a project and listing
-      // should fail with permission denied
-      const restrictedProject = await shared.openProject();
-      try {
-        await expect(
-          restrictedProject.listBuckets(),
-        ).rejects.toThrow();
-      } finally {
-        await restrictedProject.close();
-      }
+    runTest('should reject sharing with all permissions false', async () => {
+      // uplink-c rejects creating an access with all permissions false,
+      // returning "permission is empty". This is expected behavior —
+      // a share with zero permissions is invalid.
+      await expect(
+        ctx.access.share(
+          { allowDownload: false, allowUpload: false, allowList: false, allowDelete: false },
+          [],
+        ),
+      ).rejects.toThrow(/permission is empty/i);
     });
   });
 });

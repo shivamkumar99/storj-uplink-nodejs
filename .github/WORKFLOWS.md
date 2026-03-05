@@ -40,7 +40,7 @@ Each workflow has a distinct responsibility with minimal overlap:
 
 **Triggers:** Every push and PR to `main`/`develop`
 
-### Jobs
+### CI Jobs
 
 ```
 ┌─────────────┐  ┌──────────────┐
@@ -82,7 +82,7 @@ Each workflow has a distinct responsibility with minimal overlap:
 
 **Triggers:** Push to main, PRs, Weekly schedule
 
-### Jobs
+### Security Jobs
 
 | Job | Tools | Purpose |
 |-----|-------|---------|

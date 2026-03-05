@@ -74,8 +74,8 @@ napi_status extract_string_required(napi_env env, napi_value js_string,
         return status;
     }
     
-    /* Check empty */
-    if (*out_str == NULL || strlen(*out_str) == 0) {
+    /* Check empty (use strnlen to guard against non-null-terminated strings) */
+    if (*out_str == NULL || strnlen(*out_str, 1) == 0) {
         LOG_ERROR("Parameter '%s' cannot be empty", param_name);
         char error_msg[256];
         snprintf(error_msg, sizeof(error_msg), "Parameter '%s' cannot be empty", param_name);
@@ -121,7 +121,8 @@ napi_value create_string(napi_env env, const char* str) {
 int validate_bucket_name(const char* bucket_name) {
     if (bucket_name == NULL) return 0;
     
-    size_t len = strlen(bucket_name);
+    /* Use strnlen to guard against non-null-terminated strings (CWE-126) */
+    size_t len = strnlen(bucket_name, 64);
     
     /* Length: 3-63 characters, must start and end with alphanumeric */
     if (len < 3 || len > 63) return 0;
@@ -142,12 +143,13 @@ int validate_bucket_name(const char* bucket_name) {
 }
 
 int validate_object_key(const char* object_key) {
-    if (object_key == NULL || strlen(object_key) == 0) {
+    /* Use strnlen to guard against non-null-terminated strings (CWE-126) */
+    if (object_key == NULL || strnlen(object_key, 1) == 0) {
         LOG_DEBUG("Object key is empty");
         return 0;
     }
     
-    if (strlen(object_key) > 1024) {
+    if (strnlen(object_key, 1025) > 1024) {
         LOG_DEBUG("Object key too long");
         return 0;
     }

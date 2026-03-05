@@ -81,9 +81,7 @@ void join_share_url_complete(napi_env env, napi_status status, void* data) {
     LOG_INFO("edgeJoinShareUrl: created URL=%s", work_data->result.string ? work_data->result.string : "");
     
     /* Free the string from the result */
-    if (work_data->result.string != NULL) {
-        free(work_data->result.string);
-    }
+    free(work_data->result.string);
     
     napi_resolve_deferred(env, work_data->deferred, url);
     

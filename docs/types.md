@@ -10,7 +10,7 @@ All types are exported from `storj-uplink-nodejs` and defined in `src/types/inde
 
 Configuration for the Uplink client. Pass to `configRequestAccessWithPassphrase` or `configOpenProject`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Configuration for the Uplink client. Pass to `configRequestAccessWithPassphrase`
 | `dialTimeoutMilliseconds` | How long to wait for a connection (ms) | `number` (optional) |
 | `tempDirectory` | Directory for temporary files during downloads | `string` (optional) |
 
-#### Usage Example
+**Usage Example:**
 
 ```js
 const config = {
@@ -38,7 +38,7 @@ const access = await uplink.configRequestAccessWithPassphrase(
 
 Defines what actions are allowed on a shared access grant.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -49,7 +49,7 @@ Defines what actions are allowed on a shared access grant.
 | `notBefore` | Grant is not valid before this time | `Date` (optional) |
 | `notAfter` | Grant expires at this time | `Date` (optional) |
 
-#### Usage Example
+**Usage Example:**
 
 ```js
 const permission = {
@@ -71,7 +71,7 @@ const sharedAccess = await access.share(permission, [
 
 Defines a bucket prefix to be shared via `access.share()`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -80,7 +80,7 @@ Defines a bucket prefix to be shared via `access.share()`.
 
 > Note: Within a bucket, the hierarchical key derivation scheme is delineated by forward slashes (`/`). Encryption information will be included in the access grant for any key sharing the same prefix up to the last slash.
 
-#### Usage Example
+**Usage Example:**
 
 ```js
 const prefixes = [
@@ -100,14 +100,14 @@ const sharedAccess = await access.share(
 
 Returned by bucket operations (`createBucket`, `ensureBucket`, `statBucket`, `listBuckets`).
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
 | `name` | Bucket name | `string` |
 | `created` | Creation time (Unix timestamp in seconds) | `number` |
 
-#### Usage Example
+**Usage Example:**
 
 ```js
 const bucketInfo = await project.statBucket("my-bucket");
@@ -121,7 +121,7 @@ console.log(bucketInfo.created); // 1700000000
 
 Returned by object operations (`statObject`, `listObjects`, `deleteObject`, `copyObject`, `upload.info()`, `download.info()`).
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -130,7 +130,7 @@ Returned by object operations (`statObject`, `listObjects`, `deleteObject`, `cop
 | `system` | System-managed metadata | `SystemMetadata` |
 | `custom` | Custom user-defined metadata | `CustomMetadata` |
 
-#### Usage Example
+**Usage Example:**
 
 ```js
 const objectInfo = await project.statObject("my-bucket", "photos/vacation.jpg");
@@ -145,7 +145,7 @@ console.log(objectInfo.custom["app:title"]);    // "Vacation Photo"
 
 System-managed metadata for objects. Found on `ObjectInfo.system`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -160,7 +160,7 @@ System-managed metadata for objects. Found on `ObjectInfo.system`.
 User-defined key-value pairs attached to an object. Found on `ObjectInfo.custom`.\
 Keys should follow the convention `"appname:key"` to avoid collisions.
 
-#### Usage Example
+**Usage Example:**
 
 ```js
 // Setting custom metadata on upload
@@ -181,13 +181,13 @@ console.log(info.custom["app:title"]); // "Vacation Photo"
 
 Options for `project.listBuckets()`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
 | `cursor` | Pagination cursor — list buckets after this name | `string` (optional) |
 
-#### Usage Example
+**Usage Example:**
 
 ```js
 // Paginate through buckets
@@ -206,7 +206,7 @@ while (true) {
 
 Options for `project.listObjects()`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -216,7 +216,7 @@ Options for `project.listObjects()`.
 | `system` | Include system metadata in results | `boolean` (optional) |
 | `custom` | Include custom metadata in results | `boolean` (optional) |
 
-#### Usage Example
+**Usage Example:**
 
 ```js
 const objects = await project.listObjects("my-bucket", {
@@ -233,13 +233,13 @@ const objects = await project.listObjects("my-bucket", {
 
 Options for `project.uploadObject()`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
 | `expires` | When the object should expire | `Date` (optional) |
 
-#### Usage Example
+**Usage Example:**
 
 ```js
 const upload = await project.uploadObject("my-bucket", "temp-file.txt", {
@@ -253,14 +253,14 @@ const upload = await project.uploadObject("my-bucket", "temp-file.txt", {
 
 Options for `project.downloadObject()`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
 | `offset` | Starting byte offset | `number` (optional) |
 | `length` | Number of bytes to download (`-1` for all remaining bytes) | `number` (optional) |
 
-#### Usage Example
+**Usage Example:**
 
 ```js
 // Download first 1KB only
@@ -282,7 +282,7 @@ const download = await project.downloadObject("my-bucket", "large-file.bin", {
 
 Returned by `upload.write()`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -294,7 +294,7 @@ Returned by `upload.write()`.
 
 Returned by `download.read()`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -313,7 +313,7 @@ Pass to `access.overrideEncryptionKey()` for multi-tenant encryption.
 
 Information about a pending multipart upload. Returned by `listMultipartUploads()`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -329,7 +329,7 @@ Information about a pending multipart upload. Returned by `listMultipartUploads(
 
 Information about an uploaded part. Returned by `multipartUpload.listParts()`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -344,7 +344,7 @@ Information about an uploaded part. Returned by `multipartUpload.listParts()`.
 
 Configuration for Storj edge services.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -358,7 +358,7 @@ Configuration for Storj edge services.
 
 S3-compatible credentials returned by `edgeRegisterAccess()`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -372,7 +372,7 @@ S3-compatible credentials returned by `edgeRegisterAccess()`.
 
 Options for `edgeJoinShareUrl()`.
 
-#### Fields:
+**Fields:**
 
 | Field | Description | Type |
 | --- | --- | --- |
@@ -420,7 +420,7 @@ Base class for all Storj uplink errors. Use `instanceof StorjError` to catch any
 | `message` | Human-readable error message | `string` |
 | `details` | Additional error details from the native layer | `string` (optional) |
 
-#### Usage Example
+**Usage Example:**
 
 ```js
 const { StorjError, BucketNotFoundError } = require("storj-uplink-nodejs");

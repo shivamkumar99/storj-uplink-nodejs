@@ -13,7 +13,8 @@
 static int validate_bucket_name(const char* bucket_name) {
     if (bucket_name == NULL) return 0;
     
-    size_t len = strlen(bucket_name);
+    /* Use strnlen to guard against non-null-terminated strings (CWE-126) */
+    size_t len = strnlen(bucket_name, 64);
     
     /* Length: 3-63 characters */
     if (len < 3 || len > 63) return 0;
@@ -34,14 +35,16 @@ static int validate_bucket_name(const char* bucket_name) {
 }
 
 static int validate_object_key(const char* object_key) {
-    if (object_key == NULL || strlen(object_key) == 0) return 0;
-    if (strlen(object_key) > 1024) return 0;
+    /* Use strnlen to guard against non-null-terminated strings (CWE-126) */
+    if (object_key == NULL || strnlen(object_key, 1) == 0) return 0;
+    if (strnlen(object_key, 1025) > 1024) return 0;
     return 1;
 }
 
 static char* safe_strdup(const char* str) {
     if (str == NULL) return NULL;
-    size_t len = strlen(str);
+    /* Use strnlen to guard against non-null-terminated strings (CWE-126) */
+    size_t len = strnlen(str, 65536);
     char* copy = (char*)malloc(len + 1);
     if (copy == NULL) return NULL;
     /* copy exactly len bytes + NUL; dest is len+1 so no overflow (CWE-120) */

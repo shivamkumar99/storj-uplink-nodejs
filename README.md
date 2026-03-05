@@ -1,6 +1,17 @@
 # <b>storj-uplink-nodejs binding</b>
 
-#### *Node.js native bindings for Storj's uplink-c library — v0.1.0-beta.21*
+[![npm version](https://img.shields.io/npm/v/storj-uplink-nodejs?color=blue&label=npm)](https://www.npmjs.com/package/storj-uplink-nodejs)
+[![npm downloads](https://img.shields.io/npm/dm/storj-uplink-nodejs?color=brightgreen)](https://www.npmjs.com/package/storj-uplink-nodejs)
+[![CI](https://github.com/shivamkumar99/storj-uplink-nodejs/actions/workflows/ci.yml/badge.svg)](https://github.com/shivamkumar99/storj-uplink-nodejs/actions/workflows/ci.yml)
+[![Security](https://github.com/shivamkumar99/storj-uplink-nodejs/actions/workflows/security.yml/badge.svg)](https://github.com/shivamkumar99/storj-uplink-nodejs/actions/workflows/security.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/97f6029a85e2459ca0b29a28e63fea21)](https://app.codacy.com/gh/shivamkumar99/storj-uplink-nodejs/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![Node.js](https://img.shields.io/node/v/storj-uplink-nodejs?color=green)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![N-API](https://img.shields.io/badge/N--API-pure%20C-orange)](https://nodejs.org/api/n-api.html)
+[![License](https://img.shields.io/npm/l/storj-uplink-nodejs?color=blue)](https://github.com/shivamkumar99/storj-uplink-nodejs/blob/main/LICENSE)
+[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-lightgrey)](https://github.com/shivamkumar99/storj-uplink-nodejs)
+
+#### *Node.js native bindings for Storj's uplink-c library — v0.1.0-beta.23*
 
 A modern, TypeScript-first binding using pure C + Node-API (N-API) for connecting to the Storj decentralized cloud storage network. Prebuilt binaries are available for macOS, Linux, and Windows — no Go toolchain required for most installs.
 
@@ -798,6 +809,25 @@ DownloadResultStruct
 (standalone) listMultipartUploads(projectHandle, bucket, options?) → UploadInfo[]
 (standalone) edgeRegisterAccess(config, accessHandle, options?) → EdgeCredentials
 (standalone) edgeJoinShareUrl(baseUrl, accessKeyId, bucket, key, options?) → string
+```
+
+---
+
+## <b>TypeScript Configuration</b>
+
+The project uses **two separate `tsconfig.json` files** to keep test globals (`describe`, `it`, `expect`) out of production code.
+
+| File | Scope | Purpose |
+| --- | --- | --- |
+| `tsconfig.json` | `src/**/*.ts` | Production code — emits to `dist/`, strict checks, **no** Jest types |
+| `test/tsconfig.json` | `test/**/*.ts` | Test code — extends root config, adds `"types": ["jest", "node"]`, `noEmit` |
+
+**Why not one file?** If `@types/jest` were included in the root config, `describe`, `it`, and `expect` would be valid identifiers everywhere — including production `src/` files. You could accidentally write `expect(...)` in `src/uplink.ts` and TypeScript would not flag it, but it would crash at runtime. The two-config pattern scopes Jest globals to test files only.
+
+```
+tsconfig.json              ← used by `tsc --noEmit` and IDE for src/
+test/tsconfig.json         ← used by IDE for test/, extends root config
+jest.config.js + ts-jest   ← used by Jest at runtime (reads root tsconfig)
 ```
 
 ---

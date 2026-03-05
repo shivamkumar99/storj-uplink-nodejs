@@ -163,7 +163,10 @@ describe('Typed Errors from Native Code', () => {
     });
 
     it('should preserve error details/message', async () => {
-      const error = await getTypedError(ErrorCodes.OBJECT_NOT_FOUND, 'object "myfile.txt" not found');
+      const error = await getTypedError(
+        ErrorCodes.OBJECT_NOT_FOUND,
+        'object "myfile.txt" not found'
+      );
 
       expect(error).toBeInstanceOf(StorjError);
       const storjError = error as StorjError;
@@ -219,7 +222,10 @@ describe('Typed Errors from Native Code', () => {
       let caughtType = 'unknown';
 
       try {
-        await native.testThrowTypedError(ErrorCodes.BUCKET_NOT_FOUND, 'bucket "mybucket" not found');
+        await native.testThrowTypedError(
+          ErrorCodes.BUCKET_NOT_FOUND,
+          'bucket "mybucket" not found'
+        );
       } catch (error: unknown) {
         if (error instanceof BucketNotFoundError) {
           caughtType = 'BucketNotFoundError';
@@ -227,8 +233,6 @@ describe('Typed Errors from Native Code', () => {
           caughtType = 'ObjectNotFoundError';
         } else if (error instanceof StorjError) {
           caughtType = 'StorjError';
-        } else {
-          caughtType = 'unknown';
         }
       }
 
@@ -245,8 +249,6 @@ describe('Typed Errors from Native Code', () => {
           caughtType = 'BucketNotFoundError';
         } else if (error instanceof StorjError) {
           caughtType = 'StorjError';
-        } else {
-          caughtType = 'unknown';
         }
       }
 

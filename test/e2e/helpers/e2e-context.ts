@@ -181,6 +181,10 @@ export async function cleanupE2eContext(): Promise<void> {
  *
  * When running the full suite with --runInBand, 09-cleanup.test.ts handles
  * cleanup explicitly. This hook acts as a safety net.
+ *
+ * Uses process 'beforeExit' instead of Jest's afterAll to avoid the
+ * "Cannot add a hook after tests have started running" error when tests
+ * run in parallel workers.
  */
 let _cleanupRegistered = false;
 
@@ -188,9 +192,13 @@ function registerCleanupHook(): void {
   if (_cleanupRegistered) return;
   _cleanupRegistered = true;
 
-  afterAll(async () => {
+  process.once('beforeExit', async () => {
     if (_ctx) {
-      await cleanupE2eContext();
+      try {
+        await cleanupE2eContext();
+      } catch (_) {
+        // Best-effort cleanup
+      }
     }
   });
 }
