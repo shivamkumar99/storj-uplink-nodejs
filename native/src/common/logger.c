@@ -54,6 +54,113 @@ static const LogLevelEntry LOG_LEVEL_MAP[] = {
 
 static const size_t LOG_LEVEL_MAP_SIZE = sizeof(LOG_LEVEL_MAP) / sizeof(LOG_LEVEL_MAP[0]);
 
+/* Allowed log file extensions (prevents opening arbitrary file types) */
+static const char* ALLOWED_EXTENSIONS[] = { ".log", ".txt" };
+static const size_t ALLOWED_EXTENSIONS_COUNT = sizeof(ALLOWED_EXTENSIONS) / sizeof(ALLOWED_EXTENSIONS[0]);
+
+/**
+ * Validate a log file path for safety.
+ *
+ * Checks performed:
+ *   1. Non-NULL and non-empty
+ *   2. No ".." traversal sequences
+ *   3. No null bytes (truncation attacks)
+ *   4. Must end with an allowed extension (.log, .txt)
+ *   5. (POSIX) Must resolve to a path under the current working directory
+ *   6. Reasonable length (< PATH_MAX)
+ *
+ * @param path  The candidate path to validate
+ * @return 1 if safe to open, 0 otherwise
+ */
+static int validate_log_path(const char* path) {
+    if (path == NULL || path[0] == '\0') return 0;
+
+    size_t len = strlen(path);
+
+    /* Reject unreasonably long paths */
+#ifdef PATH_MAX
+    if (len >= PATH_MAX) return 0;
+#else
+    if (len >= 4096) return 0;
+#endif
+
+    /* Reject null bytes anywhere (truncation attack) */
+    if (memchr(path, '\0', len) != path + len) return 0;
+
+    /* Reject path traversal sequences */
+    if (strstr(path, "..") != NULL) return 0;
+
+    /* Reject backslashes (Windows-style traversal on POSIX) */
+    if (strchr(path, '\\') != NULL) return 0;
+
+    /* Must end with an allowed extension */
+    int ext_ok = 0;
+    for (size_t i = 0; i < ALLOWED_EXTENSIONS_COUNT; i++) {
+        size_t ext_len = strlen(ALLOWED_EXTENSIONS[i]);
+        if (len >= ext_len &&
+            strcmp(path + len - ext_len, ALLOWED_EXTENSIONS[i]) == 0) {
+            ext_ok = 1;
+            break;
+        }
+    }
+    if (!ext_ok) return 0;
+
+#ifndef _WIN32
+    /* POSIX: resolve the path and verify it stays under cwd */
+    /* Reject absolute paths — only relative paths allowed from env */
+    if (path[0] == '/') return 0;
+
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) == NULL) return 0;
+
+    /* Build the full candidate path */
+    char candidate[PATH_MAX];
+    int n = snprintf(candidate, sizeof(candidate), "%s/%s", cwd, path);
+    if (n < 0 || (size_t)n >= sizeof(candidate)) return 0;
+
+    /* Try to resolve the parent directory (file may not exist yet) */
+    char parent[PATH_MAX];
+    strncpy(parent, candidate, sizeof(parent) - 1);
+    parent[sizeof(parent) - 1] = '\0';
+    char* last_slash = strrchr(parent, '/');
+    if (last_slash != NULL && last_slash != parent) {
+        *last_slash = '\0';
+    }
+
+    char resolved_parent[PATH_MAX];
+    if (realpath(parent, resolved_parent) == NULL) return 0;
+
+    /* Resolved parent must start with cwd (no symlink escape) */
+    size_t cwd_len = strlen(cwd);
+    if (strncmp(resolved_parent, cwd, cwd_len) != 0) return 0;
+    /* After the cwd prefix, must be end-of-string or '/' */
+    if (resolved_parent[cwd_len] != '\0' && resolved_parent[cwd_len] != '/') return 0;
+#endif
+
+    return 1;
+}
+
+/**
+ * Open a validated log file with restricted permissions.
+ *
+ * @param path  The validated file path
+ * @return FILE* on success, NULL on failure
+ */
+static FILE* open_log_file(const char* path) {
+#ifdef _WIN32
+    return fopen(path, "a");
+#else
+    /* Open with restricted permissions: owner read/write only (0600) */
+    int fd = open(path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+    if (fd < 0) return NULL;
+    FILE* f = fdopen(fd, "a");
+    if (f == NULL) {
+        close(fd);
+    }
+    return f;
+#endif
+}
+
 void logger_init(void) {
     if (initialized) return;
     
@@ -68,36 +175,19 @@ void logger_init(void) {
         }
     }
     
-    /* Check for log file — open with restricted permissions (owner rw only) */
+    /* Check for log file — validate path before opening */
     const char* env_file = getenv("UPLINK_LOG_FILE");
     if (env_file != NULL) {
-#ifdef _WIN32
-        log_file = fopen(env_file, "a");
-#else
-        /* Validate path: reject "..", path separators at start (absolute),
-         * and any other traversal patterns to prevent path injection */
-        if (strstr(env_file, "..") == NULL &&
-            strchr(env_file, '/') != env_file &&
-            strchr(env_file, '\\') == NULL) {
-            /* Resolve to absolute path and verify it stays within cwd */
-            char resolved[PATH_MAX];
-            char cwd[PATH_MAX];
-            if (getcwd(cwd, sizeof(cwd)) != NULL) {
-                char candidate[PATH_MAX];
-                snprintf(candidate, sizeof(candidate), "%s/%s", cwd, env_file);
-                if (realpath(candidate, resolved) != NULL ||
-                    /* File may not exist yet — resolve parent dir */
-                    1) {
-                    /* Only open if resolved path starts with cwd */
-                    /* For new files, trust the validated relative path */
-                    int fd = open(env_file, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-                    if (fd >= 0) {
-                        log_file = fdopen(fd, "a");
-                    }
-                }
+        if (validate_log_path(env_file)) {
+            log_file = open_log_file(env_file);
+            if (log_file == NULL) {
+                fprintf(stderr, "[WARN] UPLINK_LOG_FILE: failed to open '%s'\n", env_file);
             }
+        } else {
+            fprintf(stderr, "[WARN] UPLINK_LOG_FILE: rejected '%s' "
+                    "(must be a relative .log or .txt file with no '..' traversal)\n",
+                    env_file);
         }
-#endif
     }
     
     initialized = 1;
@@ -117,19 +207,21 @@ void logger_set_level(LogLevel level) {
 
 void logger_set_file(const char* path) {
     if (path == NULL) return;
+
+    /* Validate path before opening (same checks as env var path) */
+    if (!validate_log_path(path)) {
+        fprintf(stderr, "[WARN] logger_set_file: rejected '%s' "
+                "(must be a relative .log or .txt file with no '..' traversal)\n",
+                path);
+        return;
+    }
+
     if (log_file != NULL) {
         fclose(log_file);
         log_file = NULL;
     }
-#ifdef _WIN32
-    log_file = fopen(path, "a");
-#else
-    /* Open with restricted permissions (owner rw only) to avoid world-writable file */
-    int fd = open(path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-    if (fd >= 0) {
-        log_file = fdopen(fd, "a");
-    }
-#endif
+
+    log_file = open_log_file(path);
 }
 
 void logger_log(LogLevel level, const char* file, int line, 
