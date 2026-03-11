@@ -258,7 +258,9 @@ void logger_log(LogLevel level, const char* file, int line,
     fprintf(stderr, "%s[%s] %s [%s:%d %s()] ", 
             level_colors[level], timestamp, level_strings[level],
             filename, line, func);
-    vfprintf(stderr, fmt, args);
+    /* fmt is always a compile-time literal from LOG_* macros;
+       enforced by __attribute__((format(printf, 5, 6))) on the declaration */
+    vfprintf(stderr, fmt, args); /* Flawfinder: ignore */
     fprintf(stderr, "%s\n", COLOR_RESET);
     
     /* Print to file without colors */
@@ -267,7 +269,9 @@ void logger_log(LogLevel level, const char* file, int line,
                 timestamp, level_strings[level], filename, line, func);
         va_end(args);
         va_start(args, fmt);
-        vfprintf(log_file, fmt, args);
+        /* fmt is always a compile-time literal from LOG_* macros;
+           enforced by __attribute__((format(printf, 5, 6))) on the declaration */
+        vfprintf(log_file, fmt, args); /* Flawfinder: ignore */
         fprintf(log_file, "\n");
         fflush(log_file);
     }

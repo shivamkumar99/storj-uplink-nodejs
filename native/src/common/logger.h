@@ -52,11 +52,17 @@ void logger_set_file(const char* path);
  * @param file Source file name
  * @param line Source line number
  * @param func Function name
- * @param fmt Format string
+ * @param fmt Format string (must be a string literal — enforced by format attribute)
  * @param ... Format arguments
  */
+#if defined(__GNUC__) || defined(__clang__)
+void logger_log(LogLevel level, const char* file, int line, 
+                const char* func, const char* fmt, ...)
+    __attribute__((format(printf, 5, 6)));
+#else
 void logger_log(LogLevel level, const char* file, int line, 
                 const char* func, const char* fmt, ...);
+#endif
 
 /* Convenience macros for logging at different levels */
 #define LOG_ERROR(fmt, ...) \
