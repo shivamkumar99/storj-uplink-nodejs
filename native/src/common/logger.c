@@ -54,8 +54,10 @@ static const LogLevelEntry LOG_LEVEL_MAP[] = {
 
 static const size_t LOG_LEVEL_MAP_SIZE = sizeof(LOG_LEVEL_MAP) / sizeof(LOG_LEVEL_MAP[0]);
 
-/* Allowed log file extensions (prevents opening arbitrary file types) */
+/* Allowed log file extensions (prevents opening arbitrary file types).
+ * Lengths are compile-time constants — avoids strlen on string literals. */
 static const char* ALLOWED_EXTENSIONS[] = { ".log", ".txt" };
+static const size_t ALLOWED_EXT_LENS[] = { 4, 4 };  /* sizeof(".log")-1, sizeof(".txt")-1 */
 static const size_t ALLOWED_EXTENSIONS_COUNT = sizeof(ALLOWED_EXTENSIONS) / sizeof(ALLOWED_EXTENSIONS[0]);
 
 /**
@@ -75,12 +77,14 @@ static const size_t ALLOWED_EXTENSIONS_COUNT = sizeof(ALLOWED_EXTENSIONS) / size
 static int validate_log_path(const char* path) {
     if (path == NULL || path[0] == '\0') return 0;
 
-    size_t len = strlen(path);
-
-    /* Reject unreasonably long paths */
+    /* Use strnlen to bound the scan — defends against non-terminated input.
+     * PATH_MAX is the maximum path length on POSIX; 4096 as fallback. */
 #ifdef PATH_MAX
+    size_t len = strnlen(path, PATH_MAX);
+    /* Reject unreasonably long paths */
     if (len >= PATH_MAX) return 0;
 #else
+    size_t len = strnlen(path, 4096);
     if (len >= 4096) return 0;
 #endif
 
@@ -96,7 +100,7 @@ static int validate_log_path(const char* path) {
     /* Must end with an allowed extension */
     int ext_ok = 0;
     for (size_t i = 0; i < ALLOWED_EXTENSIONS_COUNT; i++) {
-        size_t ext_len = strlen(ALLOWED_EXTENSIONS[i]);
+        size_t ext_len = ALLOWED_EXT_LENS[i];
         if (len >= ext_len &&
             strcmp(path + len - ext_len, ALLOWED_EXTENSIONS[i]) == 0) {
             ext_ok = 1;
@@ -131,7 +135,7 @@ static int validate_log_path(const char* path) {
     if (realpath(parent, resolved_parent) == NULL) return 0;
 
     /* Resolved parent must start with cwd (no symlink escape) */
-    size_t cwd_len = strlen(cwd);
+    size_t cwd_len = strnlen(cwd, sizeof(cwd));
     if (strncmp(resolved_parent, cwd, cwd_len) != 0) return 0;
     /* After the cwd prefix, must be end-of-string or '/' */
     if (resolved_parent[cwd_len] != '\0' && resolved_parent[cwd_len] != '/') return 0;
