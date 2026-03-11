@@ -6,8 +6,8 @@ There are two ways to run them:
 
 | Approach | When to use |
 |----------|-------------|
-| [Inside this repo](#option-a-run-inside-this-repo) | You cloned `storj-uplink-nodejs` and want to test against the local build |
-| [Your own project](#option-b-run-in-your-own-project) | You installed `storj-uplink-nodejs` as an npm dependency — **start here if you are copying examples** |
+| [Inside this repo](#option-a--run-inside-this-repo) | You cloned `storj-uplink-nodejs` and want to test against the local build |
+| [Your own project](#option-b--run-in-your-own-project) | You installed `storj-uplink-nodejs` as an npm dependency — **start here if you are copying examples** |
 
 ---
 
