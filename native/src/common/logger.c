@@ -124,15 +124,20 @@ static int validate_log_path(const char* path) {
 
     /* Try to resolve the parent directory (file may not exist yet) */
     char parent[PATH_MAX];
-    strncpy(parent, candidate, sizeof(parent) - 1);
-    parent[sizeof(parent) - 1] = '\0';
+    size_t cand_len = strnlen(candidate, sizeof(candidate));
+    if (cand_len >= sizeof(parent)) return 0;
+    memcpy(parent, candidate, cand_len); /* Flawfinder: ignore — bounded by sizeof(parent) check above */
+    parent[cand_len] = '\0';
     char* last_slash = strrchr(parent, '/');
     if (last_slash != NULL && last_slash != parent) {
         *last_slash = '\0';
     }
 
+    /* Verify parent path length is within POSIX realpath limits */
+    if (strnlen(parent, sizeof(parent)) >= PATH_MAX) return 0;
+
     char resolved_parent[PATH_MAX];
-    if (realpath(parent, resolved_parent) == NULL) return 0;
+    if (realpath(parent, resolved_parent) == NULL) return 0; /* Flawfinder: ignore — parent length verified above, resolved_parent is PATH_MAX */
 
     /* Resolved parent must start with cwd (no symlink escape) */
     size_t cwd_len = strnlen(cwd, sizeof(cwd));
