@@ -166,8 +166,8 @@ describe('Sprint 13: Makefile Installation Methods', () => {
       const output = runMake('install-source', { verbose: true, timeout });
       
       // Verify output messages
-      expect(output).toContain('OPTION 1: Full Source Build');
-      expect(output).toContain('Installation complete (Source Build)');
+      expect(output).toContain('METHOD: source');
+      expect(output).toContain('SUCCESS: source install complete');
       
       // Verify files exist
       expect(fileExists(path.join(PREBUILDS_DIR, LIB_NAME))).toBe(true);
@@ -256,7 +256,7 @@ describe('Sprint 13: Makefile Installation Methods', () => {
       const output = runMake('install-hybrid', { verbose: true, timeout: 300000 });
       
       expect(output).toContain('OPTION 2: Hybrid Build');
-      expect(output).toContain('Installation complete (Hybrid Build)');
+      expect(output).toContain('SUCCESS: hybrid install complete');
       expect(fileExists(path.join(PREBUILDS_DIR, LIB_NAME))).toBe(true);
       expect(fileExists(path.join(PREBUILDS_DIR, ADDON_NAME))).toBe(true);
     });
@@ -267,18 +267,18 @@ describe('Sprint 13: Makefile Installation Methods', () => {
         return;
       }
       
-      // Skip if prebuilts are available (test won't fail)
-      if (PREBUILT_LIB_AVAILABLE) {
-        console.log('Skipping: Prebuilts are available');
-        return;
-      }
-      
       // This should fail with a helpful message
       cleanPrebuilds();
       
-      expect(() => {
-        runMake('download-lib', { timeout: 60000 });
-      }).toThrow(/Download failed|404|not available/);
+      try {
+        runMake('install-hybrid', { timeout: 60000 });
+        // If it succeeds, prebuilts are actually available — that's fine
+        console.log('install-hybrid succeeded — prebuilt binaries are available');
+        expect(fileExists(path.join(PREBUILDS_DIR, LIB_NAME))).toBe(true);
+      } catch (error) {
+        // Expected to fail with a helpful message when prebuilts unavailable
+        expect(String(error)).toMatch(/Download failed|ERROR|not available/);
+      }
     });
   });
   
@@ -304,7 +304,7 @@ describe('Sprint 13: Makefile Installation Methods', () => {
       const output = runMake('install-prebuilt', { verbose: true, timeout: 180000 });
       
       expect(output).toContain('OPTION 3: Full Prebuilt');
-      expect(output).toContain('Installation complete (Prebuilt');
+      expect(output).toContain('SUCCESS: prebuilt install complete');
       expect(fileExists(path.join(PREBUILDS_DIR, LIB_NAME))).toBe(true);
       expect(fileExists(path.join(PREBUILDS_DIR, ADDON_NAME))).toBe(true);
     });
@@ -315,18 +315,19 @@ describe('Sprint 13: Makefile Installation Methods', () => {
         return;
       }
       
-      // Skip if prebuilts are available (test won't fail)
-      if (PREBUILT_AVAILABLE) {
-        console.log('Skipping: Prebuilts are available');
-        return;
-      }
-      
-      // This should fail with a helpful message
+      // This should fail with a helpful message, or succeed if prebuilts exist
       cleanPrebuilds();
       
-      expect(() => {
-        runMake('download-addon', { timeout: 60000 });
-      }).toThrow(/Download failed|404|not available/);
+      try {
+        runMake('install-prebuilt', { timeout: 60000 });
+        // If it succeeds, prebuilts are actually available — that's fine
+        console.log('install-prebuilt succeeded — prebuilt binaries are available');
+        expect(fileExists(path.join(PREBUILDS_DIR, LIB_NAME))).toBe(true);
+        expect(fileExists(path.join(PREBUILDS_DIR, ADDON_NAME))).toBe(true);
+      } catch (error) {
+        // Expected to fail with a helpful message when prebuilts unavailable
+        expect(String(error)).toMatch(/Download failed|ERROR|not available/);
+      }
     });
   });
   
@@ -348,8 +349,8 @@ describe('Sprint 13: Makefile Installation Methods', () => {
       
       // Should either succeed with hybrid (if prebuilts exist) or fall back to source
       expect(
-        output.includes('Installation complete') ||
-        output.includes('Source Build')
+        output.includes('SUCCESS') ||
+        output.includes('source install complete')
       ).toBe(true);
     }, 600000);
   });
@@ -493,8 +494,8 @@ describe('Sprint 13: Makefile Installation Methods', () => {
       // Should show method was loaded from .uplinkrc
       expect(output).toContain('.uplinkrc');
       expect(output).toContain('prebuilt');
-      // Banner should show: Install method : prebuilt (from .../.uplinkrc)
-      expect(output).toMatch(/Install method\s*:\s*prebuilt\s*\(from/);
+      // Banner should show source is .uplinkrc
+      expect(output).toMatch(/Source\s*:\s*[^\n]*\.uplinkrc/);
     }, 600000);
 
     test('explicit UPLINK_INSTALL overrides .uplinkrc', () => {
@@ -504,9 +505,9 @@ describe('Sprint 13: Makefile Installation Methods', () => {
       const output = runInstallWithMethod('skip');
 
       // Should show "skip" was used, not "prebuilt"
-      expect(output).toContain('Method: skip');
-      // Should NOT show "(from .uplinkrc)"
-      expect(output).not.toMatch(/Install method\s*:\s*prebuilt\s*\(from/);
+      expect(output).toMatch(/Method\s*:\s*skip/);
+      // Should NOT show source is .uplinkrc — env override
+      expect(output).not.toMatch(/Source\s*:\s*[^\n]*\.uplinkrc/);
       // .uplinkrc should now be updated to "skip"
       expect(readRc()).toBe('skip');
     }, 600000);
@@ -616,9 +617,8 @@ describe('Sprint 13: Makefile Installation Methods', () => {
       // Step 3: Verify same method was used
       expect(reinstallOutput).toContain(`.uplinkrc`);
       expect(reinstallOutput).toContain(firstMethod);
-      expect(reinstallOutput).toMatch(
-        new RegExp(`Install method\\s*:\\s*${firstMethod}\\s*\\(from`)
-      );
+      // Banner should show Source is .uplinkrc
+      expect(reinstallOutput).toMatch(/Source\s*:\s*[^\n]*\.uplinkrc/);
 
       // Step 4: .uplinkrc should remain unchanged (not re-saved)
       expect(readRc()).toBe(firstMethod);

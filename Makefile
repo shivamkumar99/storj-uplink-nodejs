@@ -165,6 +165,32 @@ $(DOWNLOAD_DIR):
 	$(call MKDIR,$(DOWNLOAD_DIR))
 
 # =============================================================================
+# .uplinkrc persistence — survives rm -rf node_modules
+# =============================================================================
+UPLINKRC         := $(PROJECT_DIR)/.uplinkrc
+VALID_METHODS    := prebuilt hybrid source skip
+
+# Read saved method from .uplinkrc (empty string if missing/invalid)
+SAVED_METHOD     := $(strip $(shell cat "$(UPLINKRC)" 2>/dev/null))
+SAVED_IS_VALID   := $(filter $(SAVED_METHOD),$(VALID_METHODS))
+
+# Resolve effective method: env > .uplinkrc > auto
+ifdef UPLINK_INSTALL
+  EFFECTIVE_METHOD := $(UPLINK_INSTALL)
+  METHOD_SOURCE    := environment
+else ifdef SAVED_IS_VALID
+  EFFECTIVE_METHOD := $(SAVED_METHOD)
+  METHOD_SOURCE    := .uplinkrc
+else ifneq ($(SAVED_METHOD),)
+  # .uplinkrc exists but contains invalid value
+  EFFECTIVE_METHOD := auto
+  METHOD_SOURCE    := auto (invalid .uplinkrc value "$(SAVED_METHOD)" ignored)
+else
+  EFFECTIVE_METHOD := auto
+  METHOD_SOURCE    := auto
+endif
+
+# =============================================================================
 # INSTALL ENTRY POINT
 # =============================================================================
 .PHONY: install
@@ -175,15 +201,32 @@ install:
 	@echo "========================================================"
 	@echo "  Version  : $(VERSION)"
 	@echo "  Platform : $(PLATFORM)"
-	@echo "  Method   : $(or $(UPLINK_INSTALL),auto)"
+	@echo "  Method   : $(EFFECTIVE_METHOD)"
+ifeq ($(METHOD_SOURCE),environment)
+	@echo "  Source   : environment variable UPLINK_INSTALL"
+else ifeq ($(METHOD_SOURCE),.uplinkrc)
+	@echo "  Source   : $(UPLINKRC)"
+else
+	@echo "  Source   : $(METHOD_SOURCE)"
+endif
 	@echo "========================================================"
 	@echo ""
-ifeq ($(UPLINK_INSTALL),prebuilt)
+ifeq ($(EFFECTIVE_METHOD),skip)
+	@echo "[storj-uplink] Method: skip — skipping native build"
+	@echo "$(EFFECTIVE_METHOD)" > "$(UPLINKRC)"
+	@echo "Saved install method \"$(EFFECTIVE_METHOD)\" to $(UPLINKRC)"
+else ifeq ($(EFFECTIVE_METHOD),prebuilt)
 	@$(MAKE) install-prebuilt
-else ifeq ($(UPLINK_INSTALL),hybrid)
+	@echo "$(EFFECTIVE_METHOD)" > "$(UPLINKRC)"
+	@echo "Saved install method \"$(EFFECTIVE_METHOD)\" to $(UPLINKRC)"
+else ifeq ($(EFFECTIVE_METHOD),hybrid)
 	@$(MAKE) install-hybrid
-else ifeq ($(UPLINK_INSTALL),source)
+	@echo "$(EFFECTIVE_METHOD)" > "$(UPLINKRC)"
+	@echo "Saved install method \"$(EFFECTIVE_METHOD)\" to $(UPLINKRC)"
+else ifeq ($(EFFECTIVE_METHOD),source)
 	@$(MAKE) install-source
+	@echo "$(EFFECTIVE_METHOD)" > "$(UPLINKRC)"
+	@echo "Saved install method \"$(EFFECTIVE_METHOD)\" to $(UPLINKRC)"
 else
 	@$(MAKE) install-auto
 endif
@@ -435,12 +478,17 @@ endif
 _verify:
 	$(Q)echo ""
 	$(Q)echo "Verifying installation ..."
-	$(Q)if [ ! -f "$(PLATFORM_DIR)/$(LIB_NAME)" ]; then \
-		echo "ERROR: $(LIB_NAME) not found in $(PLATFORM_DIR)/" ; exit 1 ; fi
-	$(Q)if [ ! -f "$(PLATFORM_DIR)/$(NODE_ADDON)" ]; then \
-		echo "ERROR: $(NODE_ADDON) not found in $(PLATFORM_DIR)/" ; exit 1 ; fi
-	$(Q)echo "  OK  $(PLATFORM_DIR)/$(LIB_NAME)"
-	$(Q)echo "  OK  $(PLATFORM_DIR)/$(NODE_ADDON)"
+	$(Q)if [ -f "$(PLATFORM_DIR)/$(LIB_NAME)" ]; then \
+		echo "  ✓ $(LIB_NAME)" ; \
+	else \
+		echo "  NOT FOUND: $(LIB_NAME) not found in $(PLATFORM_DIR)/" ; exit 1 ; \
+	fi
+	$(Q)if [ -f "$(PLATFORM_DIR)/$(NODE_ADDON)" ]; then \
+		echo "  ✓ $(NODE_ADDON)" ; \
+	else \
+		echo "  NOT FOUND: $(NODE_ADDON) not found in $(PLATFORM_DIR)/" ; exit 1 ; \
+	fi
+	$(Q)echo "Verification passed!"
 
 .PHONY: verify
 verify: _verify
@@ -477,6 +525,30 @@ check-python:
 	$(Q)(which python3 > /dev/null 2>&1 || which python > /dev/null 2>&1) \
 		|| (echo "ERROR: Python not found (required by node-gyp)." && exit 1)
 
+.PHONY: check-node
+check-node:
+	$(Q)which node > /dev/null 2>&1 \
+		|| (echo "ERROR: Node.js not found. Install from https://nodejs.org/" && exit 1)
+	@echo "  Node.js: $$(node --version)"
+
+.PHONY: check-npm
+check-npm:
+	$(Q)which npm > /dev/null 2>&1 \
+		|| (echo "ERROR: npm not found. Install Node.js from https://nodejs.org/" && exit 1)
+	@echo "  npm: $$(npm --version)"
+
+.PHONY: check-source-prereqs
+check-source-prereqs: check-node check-go check-git check-compiler check-python
+	@echo "All prerequisites for source build satisfied"
+
+.PHONY: check-hybrid-prereqs
+check-hybrid-prereqs: check-node check-curl check-compiler check-python
+	@echo "All prerequisites for hybrid build satisfied"
+
+.PHONY: check-prebuilt-prereqs
+check-prebuilt-prereqs: check-node check-curl
+	@echo "All prerequisites for prebuilt download satisfied"
+
 # =============================================================================
 # BUILD HELPERS (used by CI / local development)
 # =============================================================================
@@ -504,11 +576,19 @@ clean:
 	$(call RMDIR,$(DIST_DIR))
 	@echo "Cleaned build/ and dist/"
 
-.PHONY: clean-all
-clean-all: clean
+.PHONY: clean-prebuilds
+clean-prebuilds:
 	$(call RMDIR,$(PREBUILDS_DIR))
-	$(call RMDIR,$(INCLUDE_DIR))
+	@echo "Cleaned prebuilds/"
+
+.PHONY: clean-downloads
+clean-downloads:
 	$(call RMDIR,$(DOWNLOAD_DIR))
+	@echo "Cleaned .downloads/"
+
+.PHONY: clean-all
+clean-all: clean clean-prebuilds clean-downloads
+	$(call RMDIR,$(INCLUDE_DIR))
 	$(call RMDIR,$(UPLINK_C_SRC_DIR))
 	@echo "Cleaned all generated directories."
 
@@ -537,25 +617,41 @@ help:
 	@echo ""
 	@echo "storj-uplink-nodejs — Makefile"
 	@echo ""
-	@echo "Install methods:"
+	@echo "INSTALLATION OPTIONS:"
 	@echo "  make install                         auto-detect (prebuilt → hybrid → source)"
 	@echo "  make install UPLINK_INSTALL=prebuilt download lib + addon from GitHub"
 	@echo "  make install UPLINK_INSTALL=hybrid   download lib, compile addon locally"
 	@echo "  make install UPLINK_INSTALL=source   build everything from source"
+	@echo "  make install UPLINK_INSTALL=skip     skip native build entirely"
 	@echo ""
-	@echo "Via npm:"
-	@echo "  npm install storj-uplink-nodejs"
-	@echo "  UPLINK_INSTALL=hybrid npm install storj-uplink-nodejs"
+	@echo "  Via npm:"
+	@echo "    npm install storj-uplink-nodejs"
+	@echo "    UPLINK_INSTALL=hybrid npm install storj-uplink-nodejs"
 	@echo ""
-	@echo "Other targets:"
-	@echo "  make build        Build TypeScript + native addon"
-	@echo "  make clean        Remove build/ and dist/"
-	@echo "  make clean-all    Remove all generated dirs"
-	@echo "  make verify       Verify lib + addon are in place"
-	@echo "  make info         Show platform / URL info"
+	@echo "BUILD TARGETS:"
+	@echo "  make build          Build TypeScript + native addon"
+	@echo "  make build-ts       Build TypeScript only"
+	@echo "  make build-native   Build native addon only"
+	@echo ""
+	@echo "DOWNLOAD TARGETS:"
+	@echo "  make install-prebuilt  Download lib + addon from GitHub Releases"
+	@echo "  make install-hybrid    Download lib, compile addon locally"
+	@echo "  make install-source    Build everything from source"
+	@echo ""
+	@echo "TEST & VERIFY:"
+	@echo "  make test           Run test suite"
+	@echo "  make lint           Run linter"
+	@echo "  make verify         Verify lib + addon are in place"
+	@echo "  make verify-full    Same as verify (checks both files)"
+	@echo ""
+	@echo "CLEAN:"
+	@echo "  make clean            Remove build/ and dist/"
+	@echo "  make clean-prebuilds  Remove native/prebuilds/"
+	@echo "  make clean-downloads  Remove .downloads/"
+	@echo "  make clean-all        Remove all generated dirs"
 	@echo ""
 	@echo "Variables:"
-	@echo "  UPLINK_INSTALL   prebuilt | hybrid | source  (default: auto)"
+	@echo "  UPLINK_INSTALL   prebuilt | hybrid | source | skip  (default: auto)"
 	@echo "  VERBOSE=1        Show all commands"
 	@echo "  PLATFORM         Override platform (e.g. darwin-x64)"
 	@echo "  GITHUB_OWNER     $(GITHUB_OWNER)"
