@@ -122,6 +122,22 @@ function main() {
         '--suppress=staticFunction',        // Functions declared in headers and used across
                                             // translation units appear "unused" to cppcheck
                                             // when analyzing a single .c file
+        '--suppress=missingIncludeSystem',  // System headers (stdlib.h, string.h, etc.) are not
+                                            // available on Linux CI runners; cppcheck states:
+                                            // "Cppcheck does not need standard library headers
+                                            // to get proper results."
+        '--suppress=missingInclude',        // uplink.h lives in a separate uplink-c directory
+                                            // not passed to cppcheck — analysis still works
+                                            // without it
+        '--suppress=toomanyconfigs',        // Informational: cppcheck only checks 12 of N
+                                            // #ifdef configurations — expected with N-API
+                                            // headers that define many platform combos
+        '--suppress=checkersReport',        // Informational: "Active checkers: X/Y" summary
+                                            // — not useful in CI output
+        '--suppress=normalCheckLevelMaxBranches', // Informational: cppcheck limits branch analysis
+                                            // in normal mode — expected with complex N-API code
+        '--suppress=knownConditionTrueFalse',  // False positives from macOS SDK headers
+                                            // (e.g. sys/_types/_fd_def.h fd_set overflow check)
         '--suppress=unmatchedSuppression',  // Guard against cppcheck version drift: apt on
                                             // ubuntu-latest ships 2.13.0 which lacks some checks
                                             // (e.g. staticFunction added in 2.17). Unmatched
