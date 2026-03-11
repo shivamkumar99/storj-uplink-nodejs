@@ -231,11 +231,11 @@ void logger_log(LogLevel level, const char* file, int line,
     
     /* Get timestamp — use localtime_r (thread-safe, POSIX) on POSIX systems */
     time_t now = time(NULL);
-    struct tm tm_buf;
 #ifdef _WIN32
     struct tm* tm_info = localtime(&now); /* Windows: single-threaded addon, acceptable */
     if (tm_info == NULL) return;
 #else
+    struct tm tm_buf;
     struct tm* tm_info = localtime_r(&now, &tm_buf);
     if (tm_info == NULL) return;
 #endif

@@ -119,6 +119,9 @@ function main() {
         '--suppress=constVariablePointer',  // Suggests `type* const p` (const on the pointer
         '--suppress=constParameterPointer', // itself, not what it points to) — uncommon in C
                                             // and adds clutter with minimal safety benefit
+        '--suppress=staticFunction',        // Functions declared in headers and used across
+                                            // translation units appear "unused" to cppcheck
+                                            // when analyzing a single .c file
         '--suppress=unmatchedSuppression',  // Guard against cppcheck version drift: apt on
                                             // ubuntu-latest ships 2.13.0 which lacks some checks
                                             // (e.g. staticFunction added in 2.17). Unmatched
