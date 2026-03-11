@@ -129,6 +129,7 @@ size_t safe_memcpy(void* dest, size_t dest_size, const void* src, size_t src_len
     if (dest == NULL || src == NULL || dest_size == 0) return 0;
 
     const size_t n = src_len <= dest_size ? src_len : dest_size;
-    memcpy(dest, src, n);
+    /* n is bounded by min(src_len, dest_size) above — no overflow possible */
+    memcpy(dest, src, n); /* Flawfinder: ignore */
     return n;
 }

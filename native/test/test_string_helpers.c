@@ -48,7 +48,7 @@ static char* safe_strdup(const char* str) {
     char* copy = (char*)malloc(len + 1);
     if (copy == NULL) return NULL;
     /* copy exactly len bytes + NUL; dest is len+1 so no overflow (CWE-120) */
-    memcpy(copy, str, len);
+    memcpy(copy, str, len); /* Flawfinder: ignore */
     copy[len] = '\0';
     return copy;
 }
