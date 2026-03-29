@@ -253,6 +253,12 @@ jobs:
           find native/ -type f | head -20
           echo "=== Looking for .node file ==="
           find . -name 'uplink_native.node' -type f
+          echo "=== Check .node rpath (Linux) ==="
+          if command -v readelf &>/dev/null; then
+            readelf -d native/prebuilds/*/uplink_native.node 2>/dev/null | grep -i 'rpath\|runpath\|needed' || echo "no rpath info"
+          fi
+          echo "=== Check .so presence ==="
+          ls -la native/prebuilds/*/libuplink* 2>/dev/null || echo "no libuplink found"
         shell: bash
 
       - name: Install dependencies

@@ -270,14 +270,18 @@ function loadNativeModule(): NativeModule {
   const buildPath = path.join(__dirname, '..', '..', 'build', 'Release', 'uplink_native.node');
 
   // Try prebuilt first (Option 3: no compilation needed)
+  let prebuiltError: unknown;
   try {
     return loadAddon(prebuiltPath);
-  } catch {
-    // Prebuilt not available — fall through to local build
+  } catch (err: unknown) {
+    prebuiltError = err;
+    // Log to stderr so CI/debug output shows the real reason the prebuilt failed
+    // (e.g. missing libuplink.so, GLIBC version mismatch, wrong arch)
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`[uplink-nodejs] Prebuilt load failed (${prebuiltPath}): ${msg}\n`);
   }
 
   // Try local build (Option 1/2: compiled via node-gyp)
-  // Capture the error here — this is the last resort and its message is meaningful
   let buildError: unknown;
   try {
     return loadAddon(buildPath);
@@ -286,10 +290,12 @@ function loadNativeModule(): NativeModule {
   }
 
   throw new Error(
-    'Failed to load uplink native module. No prebuilt binary found for ' +
-      `${platform}, and no local build at build/Release/. ` +
+    'Failed to load uplink native module. ' +
+      `Prebuilt not loadable for ${platform}, and no local build at build/Release/.\n` +
+      `  Prebuilt error: ${prebuiltError instanceof Error ? prebuiltError.message : String(prebuiltError)}\n` +
+      `  Build error: ${buildError instanceof Error ? (buildError as Error).message : String(buildError)}\n` +
       'Run "make install-prebuilt" (no compiler) or "make install-hybrid" (requires C compiler) ' +
-      `or "make install-source" (requires Go + C compiler). Last error: ${buildError}`
+      'or "make install-source" (requires Go + C compiler).'
   );
 }
 
