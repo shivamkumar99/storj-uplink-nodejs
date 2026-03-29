@@ -101,8 +101,43 @@ int load_uplink_library(void) {
         /* Reject paths containing ".." to prevent directory traversal */
         if (strstr(env_path, "..") != NULL) {
             LOG_ERROR("UPLINK_LIBRARY_PATH rejected: contains '..' traversal sequence");
+        } else if (strlen(env_path) >= sizeof(path)) {
+            LOG_ERROR("UPLINK_LIBRARY_PATH rejected: path too long");
         } else {
-            if (try_load_library(env_path) == 0) return 0;
+            /*
+             * Resolve to an absolute canonical path before passing to dlopen/LoadLibrary.
+             * This eliminates symlink-based traversal and ensures we load exactly
+             * what the user intended. CodeQL: cpp/uncontrolled-process-operation
+             */
+            char resolved[1024];
+#ifdef _WIN32
+            DWORD len = GetFullPathNameA(env_path, sizeof(resolved), resolved, NULL);
+            if (len == 0 || len >= sizeof(resolved)) {
+                LOG_ERROR("UPLINK_LIBRARY_PATH rejected: cannot resolve path");
+            } else {
+                /* Verify the file exists before loading */
+                DWORD attrs = GetFileAttributesA(resolved);
+                if (attrs == INVALID_FILE_ATTRIBUTES || (attrs & FILE_ATTRIBUTE_DIRECTORY)) {
+                    LOG_ERROR("UPLINK_LIBRARY_PATH rejected: file does not exist or is a directory");
+                } else {
+                    if (try_load_library(resolved) == 0) return 0;
+                }
+            }
+#else
+            char* rp = realpath(env_path, resolved);
+            if (rp == NULL) {
+                LOG_ERROR("UPLINK_LIBRARY_PATH rejected: cannot resolve path (%s)", env_path);
+            } else {
+                /* Verify the resolved path ends with the expected library extension */
+                size_t rlen = strlen(rp);
+                size_t elen = strlen(LIB_EXT);
+                if (rlen < elen || strcmp(rp + rlen - elen, LIB_EXT) != 0) {
+                    LOG_ERROR("UPLINK_LIBRARY_PATH rejected: does not end with '%s'", LIB_EXT);
+                } else {
+                    if (try_load_library(rp) == 0) return 0;
+                }
+            }
+#endif
         }
     }
     

@@ -11,7 +11,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#ifndef _WIN32
+#ifdef _WIN32
+#include <windows.h>
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
+#else
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <limits.h>
@@ -184,14 +189,67 @@ void logger_init(void) {
         }
     }
     
-    /* Check for log file — validate path before opening */
+    /* Check for log file — validate and resolve path before opening.
+     * CodeQL: cpp/path-injection — we resolve to a canonical path so that
+     * open_log_file never receives raw user input. */
     const char* env_file = getenv("UPLINK_LOG_FILE");
     if (env_file != NULL) {
         if (validate_log_path(env_file)) {
-            log_file = open_log_file(env_file);
-            if (log_file == NULL) {
-                fprintf(stderr, "[WARN] UPLINK_LOG_FILE: failed to open '%s'\n", env_file);
+            /* Build the full path (validate_log_path already confirmed
+             * it's a relative path under cwd on POSIX) */
+#ifdef _WIN32
+            /* On Windows, validate_log_path does basic checks;
+             * resolve with GetFullPathNameA before opening */
+            char resolved_log[PATH_MAX];
+            DWORD rlen = GetFullPathNameA(env_file, sizeof(resolved_log), resolved_log, NULL);
+            if (rlen == 0 || rlen >= sizeof(resolved_log)) {
+                fprintf(stderr, "[WARN] UPLINK_LOG_FILE: cannot resolve '%s'\n", env_file);
+            } else {
+                log_file = open_log_file(resolved_log);
+                if (log_file == NULL) {
+                    fprintf(stderr, "[WARN] UPLINK_LOG_FILE: failed to open '%s'\n", resolved_log);
+                }
             }
+#else
+            /* On POSIX, resolve parent + filename to a canonical path.
+             * The file may not exist yet so we resolve the parent dir
+             * and append the filename. */
+            char cwd_buf[PATH_MAX];
+            if (getcwd(cwd_buf, sizeof(cwd_buf)) == NULL) {
+                fprintf(stderr, "[WARN] UPLINK_LOG_FILE: cannot get cwd\n");
+            } else {
+                char full_path[PATH_MAX];
+                int n = snprintf(full_path, sizeof(full_path), "%s/%s", cwd_buf, env_file);
+                if (n < 0 || (size_t)n >= sizeof(full_path)) {
+                    fprintf(stderr, "[WARN] UPLINK_LOG_FILE: resolved path too long\n");
+                } else {
+                    /* Resolve parent directory to eliminate any symlinks */
+                    char parent_buf[PATH_MAX];
+                    memcpy(parent_buf, full_path, (size_t)n + 1);
+                    char* slash = strrchr(parent_buf, '/');
+                    const char* basename = slash ? slash + 1 : full_path;
+                    if (slash && slash != parent_buf) *slash = '\0';
+
+                    char resolved_parent[PATH_MAX];
+                    if (realpath(parent_buf, resolved_parent) == NULL) {
+                        fprintf(stderr, "[WARN] UPLINK_LOG_FILE: cannot resolve parent dir\n");
+                    } else {
+                        char resolved_log[PATH_MAX];
+                        int m = snprintf(resolved_log, sizeof(resolved_log),
+                                         "%s/%s", resolved_parent, basename);
+                        if (m < 0 || (size_t)m >= sizeof(resolved_log)) {
+                            fprintf(stderr, "[WARN] UPLINK_LOG_FILE: resolved path too long\n");
+                        } else {
+                            log_file = open_log_file(resolved_log);
+                            if (log_file == NULL) {
+                                fprintf(stderr, "[WARN] UPLINK_LOG_FILE: failed to open '%s'\n",
+                                        resolved_log);
+                            }
+                        }
+                    }
+                }
+            }
+#endif
         } else {
             fprintf(stderr, "[WARN] UPLINK_LOG_FILE: rejected '%s' "
                     "(must be a relative .log or .txt file with no '..' traversal)\n",
