@@ -2,6 +2,9 @@
   "targets": [
     {
       "target_name": "uplink_native",
+      "defines": [
+        "NAPI_VERSION=8"
+      ],
       "sources": [
         "native/src/addon.c",
         "native/src/common/logger.c",

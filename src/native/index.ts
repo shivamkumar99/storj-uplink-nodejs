@@ -225,6 +225,16 @@ export interface ErrorClassesMap {
 }
 
 /**
+ * Minimum Node-API version required by this addon.
+ * Must match NAPI_VERSION in binding.gyp.
+ *
+ * Node-API version support:
+ *   Node 16: NAPI v8    Node 18: NAPI v8 (v9 from 18.17)
+ *   Node 20: NAPI v9    Node 22: NAPI v9
+ */
+const REQUIRED_NAPI_VERSION = 8;
+
+/**
  * Load the native module once
  *
  * Search order:
@@ -232,6 +242,15 @@ export interface ErrorClassesMap {
  *   2. Local build: build/Release/uplink_native.node             (Option 1/2: install-source/hybrid)
  */
 function loadNativeModule(): NativeModule {
+  // Verify Node-API compatibility before attempting to load
+  const nodeNapiVersion = (process.versions as Record<string, string>).napi;
+  if (nodeNapiVersion && parseInt(nodeNapiVersion, 10) < REQUIRED_NAPI_VERSION) {
+    throw new Error(
+      `uplink-nodejs requires Node-API v${REQUIRED_NAPI_VERSION}+ ` +
+        `(Node.js >=18.0.0), but this Node.js ${process.version} ` +
+        `only supports Node-API v${nodeNapiVersion}.`
+    );
+  }
   // Native .node addons must be loaded via require() with dynamic paths.
   // TypeScript's import() cannot load .node files, and this is CommonJS.
   // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires, security/detect-non-literal-require

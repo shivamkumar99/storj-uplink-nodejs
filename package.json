@@ -1,7 +1,7 @@
 {
   "name": "storj-uplink-nodejs",
-  "version": "0.1.0-beta.24",
-  "description": "Node.js bindings for Storj's uplink-c library",
+  "version": "1.0.0",
+  "description": "Storj decentralized cloud storage SDK for Node.js — upload, download, and manage files with end-to-end encryption via native bindings",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "publishConfig": {
@@ -70,8 +70,18 @@
     "uplink",
     "decentralized",
     "storage",
+    "cloud-storage",
+    "object-storage",
+    "s3-compatible",
+    "file-upload",
+    "file-download",
+    "encryption",
+    "end-to-end-encryption",
     "native",
-    "binding"
+    "node-api",
+    "napi",
+    "multipart-upload",
+    "sdk"
   ],
   "author": "Storj Labs",
   "license": "Apache-2.0",
