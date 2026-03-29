@@ -188,8 +188,9 @@ describe('Sprint 13: Makefile Installation Methods', () => {
       
       const output = runMake('verify-full');
       expect(output).toContain('Verification passed!');
-      expect(output).toContain(`✓ ${LIB_NAME}`);
-      expect(output).toContain(`✓ ${ADDON_NAME}`);
+      // Match filenames without the ✓ prefix — Windows mangles UTF-8 checkmarks
+      expect(output).toContain(LIB_NAME);
+      expect(output).toContain(ADDON_NAME);
     });
     
     test('native module can be loaded after install-source', () => {
