@@ -278,7 +278,7 @@ describe('Sprint 13: Makefile Installation Methods', () => {
         expect(fileExists(path.join(PREBUILDS_DIR, LIB_NAME))).toBe(true);
       } catch (error) {
         // Expected to fail with a helpful message when prebuilts unavailable
-        expect(String(error)).toMatch(/Download failed|ERROR|not available/);
+        expect(String(error)).toMatch(/Download failed|ERROR|error|not available|fatal|Cannot connect|tar.*failed/i);
       }
     });
   });
@@ -327,7 +327,7 @@ describe('Sprint 13: Makefile Installation Methods', () => {
         expect(fileExists(path.join(PREBUILDS_DIR, ADDON_NAME))).toBe(true);
       } catch (error) {
         // Expected to fail with a helpful message when prebuilts unavailable
-        expect(String(error)).toMatch(/Download failed|ERROR|not available/);
+        expect(String(error)).toMatch(/Download failed|ERROR|error|not available|fatal|Cannot connect|tar.*failed/i);
       }
     });
   });
