@@ -172,7 +172,7 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: build-${{ matrix.platform }}
-          path: native/
+          path: .
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -245,7 +245,15 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: build-${{ matrix.platform }}
-          path: native/
+          path: .
+
+      - name: Verify artifact layout
+        run: |
+          echo "=== Artifact contents ==="
+          find native/ -type f | head -20
+          echo "=== Looking for .node file ==="
+          find . -name 'uplink_native.node' -type f
+        shell: bash
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -309,7 +317,7 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: build-${{ matrix.platform }}
-          path: native/
+          path: .
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
