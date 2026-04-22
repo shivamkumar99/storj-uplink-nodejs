@@ -94,8 +94,8 @@
             "-L<(module_root_dir)/native/prebuilds/linux-<(target_arch)",
             "-luplink",
             "-Wl,--disable-new-dtags",
-            "-Wl,-rpath,$ORIGIN/../../native/prebuilds/linux-<(target_arch)",
-            "-Wl,-rpath,$ORIGIN"
+            "-Wl,-rpath,'$$ORIGIN/../../native/prebuilds/linux-<(target_arch)'",
+            "-Wl,-rpath,'$$ORIGIN'"
           ]
         }],
         ["OS=='win'", {

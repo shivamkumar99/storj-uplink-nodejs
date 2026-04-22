@@ -43,3 +43,6 @@ native/include/
 
 # Persistent install config (user-specific, not committed)
 .uplinkrc
+
+# Local CI reproduction tooling (Docker scripts, built artifacts)
+.ci-repro/
