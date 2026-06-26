@@ -15,6 +15,7 @@
     "build": "npm run build:ts && npm run build:native",
     "build:ts": "tsc",
     "build:native": "node-gyp rebuild",
+    "prepack": "npm run build:ts && node -e \"const fs=require('fs');if(!fs.existsSync('dist/index.js')||!fs.existsSync('dist/index.d.ts')){console.error('ERROR: dist/ not built — refusing to pack a dist-less tarball');process.exit(1)}\"",
     "clean": "node -e \"const fs=require('fs');['dist','build'].forEach(d=>fs.rmSync(d,{recursive:true,force:true}))\"",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
