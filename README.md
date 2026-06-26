@@ -202,8 +202,20 @@ Required only if building from source (`UPLINK_INSTALL=source` or `hybrid`):
 - **Go** >= 1.21
 - **make** and a C compiler (`gcc` / `clang`)
 - `python3` (required by node-gyp)
+- **`node-gyp`** — must be installed manually first (see note below)
 - macOS: Xcode Command Line Tools → `xcode-select --install`
 - Windows: [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+
+> **⚠️ Install `node-gyp` first for `hybrid` / `source`.**
+> `node-gyp` is a build-time tool and is **not** a runtime dependency of this
+> package, so it is not installed automatically for consumers. The `hybrid` and
+> `source` install methods compile the native addon and therefore need it. The
+> default `prebuilt` method does **not** — it needs no compiler at all.
+>
+> Install it globally before running a hybrid/source install:
+> ```sh
+> npm install -g node-gyp
+> ```
 
 ---
 
@@ -243,10 +255,12 @@ npm install storj-uplink-nodejs
 
 ### Install from Source
 
-Compiles the native addon from source. Requires Go >= 1.21 and a C compiler.
+Compiles the native addon from source. Requires Go >= 1.21, a C compiler, and
+**`node-gyp` installed first** (`npm install -g node-gyp`).
 
 **Linux / macOS**
 ```sh
+npm install -g node-gyp                 # one-time, if not already installed
 UPLINK_INSTALL=source npm install storj-uplink-nodejs
 ```
 
@@ -264,10 +278,13 @@ set UPLINK_INSTALL=source && npm install storj-uplink-nodejs
 
 ### Hybrid Install
 
-Tries prebuilt first, falls back to building from source if the prebuilt is unavailable.
+Downloads the prebuilt `libuplink` library, then compiles the native addon
+locally. Requires a C compiler and **`node-gyp` installed first**
+(`npm install -g node-gyp`).
 
 **Linux / macOS**
 ```sh
+npm install -g node-gyp                 # one-time, if not already installed
 UPLINK_INSTALL=hybrid npm install storj-uplink-nodejs
 ```
 

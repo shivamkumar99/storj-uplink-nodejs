@@ -104,8 +104,13 @@ UPLINK_C_SRC_DIR := $(PROJECT_DIR)/.uplink-c-build
 
 NODE_ADDON       := uplink_native.node
 
-# node-gyp: prefer the local devDependency over any globally installed version
-NODE_GYP         := $(PROJECT_DIR)/node_modules/.bin/node-gyp
+# node-gyp resolution (used by the hybrid/source build paths only).
+# node-gyp is a devDependency, so it is NOT present in a consumer install.
+# Prefer a package-local copy if one exists, otherwise fall back to a node-gyp
+# found on PATH (e.g. `npm install -g node-gyp`). Consumers using hybrid/source
+# must have node-gyp installed manually first — see README "Source Build
+# Prerequisites".
+NODE_GYP         := $(shell test -x "$(PROJECT_DIR)/node_modules/.bin/node-gyp" && echo "$(PROJECT_DIR)/node_modules/.bin/node-gyp" || echo node-gyp)
 
 # uplink-c to clone / build from source
 UPLINK_C_REPO    := https://github.com/storj/uplink-c.git
