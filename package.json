@@ -1,6 +1,6 @@
 {
   "name": "storj-uplink-nodejs",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Storj decentralized cloud storage SDK for Node.js — upload, download, and manage files with end-to-end encryption via native bindings",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
