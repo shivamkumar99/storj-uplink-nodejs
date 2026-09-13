@@ -23,7 +23,7 @@ import { native } from '../native';
  * ```
  */
 export class DownloadResultStruct {
-  private _downloadHandle: unknown;
+  private readonly _downloadHandle: unknown;
   private _closed: boolean = false;
 
   /**

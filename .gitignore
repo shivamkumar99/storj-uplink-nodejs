@@ -46,3 +46,10 @@ native/include/
 
 # Local CI reproduction tooling (Docker scripts, built artifacts)
 .ci-repro/
+.scannerwork/
+
+# compiled C test executables (built by npm run test:c)
+native/test/test_handle_helpers
+native/test/test_helpers
+native/test/test_string_helpers
+native/test/*.dSYM/

@@ -54,7 +54,7 @@ describe('DownloadOptions Interface', () => {
             const options: DownloadOptions = {
                 length: 500
             };
-            expect(options.length).toBe(500);
+            expect(options).toHaveLength(500);
         });
 
         it('should accept both offset and length', () => {
@@ -63,7 +63,7 @@ describe('DownloadOptions Interface', () => {
                 length: 200
             };
             expect(options.offset).toBe(100);
-            expect(options.length).toBe(200);
+            expect(options).toHaveLength(200);
         });
 
         it('should accept negative length (-1 for full file)', () => {
@@ -71,7 +71,8 @@ describe('DownloadOptions Interface', () => {
                 offset: 0,
                 length: -1
             };
-            expect(options.length).toBe(-1);
+            // `length` here is the DownloadOptions byte-range field, not an array length
+            expect(options).toEqual({ offset: 0, length: -1 });
         });
     });
 });
@@ -113,7 +114,7 @@ describe('Download Parameter Validation', () => {
 
         it('should reject empty object keys', () => {
             const emptyKey = '';
-            expect(emptyKey.length).toBe(0);
+            expect(emptyKey).toHaveLength(0);
         });
     });
 });
@@ -142,23 +143,23 @@ describe('Download Read Buffer', () => {
         it('should support Buffer type', () => {
             const buffer = Buffer.alloc(1024);
             expect(Buffer.isBuffer(buffer)).toBe(true);
-            expect(buffer.length).toBe(1024);
+            expect(buffer).toHaveLength(1024);
         });
 
         it('should support pre-allocated buffers', () => {
             const buffer = Buffer.allocUnsafe(4096);
-            expect(buffer.length).toBe(4096);
+            expect(buffer).toHaveLength(4096);
         });
 
         it('should support empty buffer', () => {
             const buffer = Buffer.alloc(0);
-            expect(buffer.length).toBe(0);
+            expect(buffer).toHaveLength(0);
         });
 
         it('should support large buffers', () => {
             const size = 1024 * 1024; // 1 MB
             const buffer = Buffer.alloc(size);
-            expect(buffer.length).toBe(size);
+            expect(buffer).toHaveLength(size);
         });
     });
 });

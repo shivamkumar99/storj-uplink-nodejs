@@ -237,7 +237,8 @@ describe('Sprint 13: Makefile Installation Methods', () => {
     
     const PREBUILT_LIB_AVAILABLE = false; // Set to true when prebuilts are published
     
-    test.skip('install-hybrid downloads library and builds addon', () => {
+    // Skipped: needs published prebuilt uplink-c binaries on the GitHub release; enable via PREBUILT_LIB_AVAILABLE.
+    test.skip('install-hybrid downloads library and builds addon', () => { // skipped until prebuilts are published
       if (!PREBUILT_LIB_AVAILABLE) {
         console.log('Skipping: Prebuilt uplink-c library not available for download');
         console.log('Publish prebuilts to your GitHub repo releases');
@@ -290,7 +291,8 @@ describe('Sprint 13: Makefile Installation Methods', () => {
     
     const PREBUILT_AVAILABLE = false; // Set to true when prebuilts are published
     
-    test.skip('install-prebuilt downloads library and addon', () => {
+    // Skipped: needs published prebuilt binaries on the GitHub release; enable via PREBUILT_AVAILABLE.
+    test.skip('install-prebuilt downloads library and addon', () => { // skipped until prebuilts are published
       if (!PREBUILT_AVAILABLE) {
         console.log('Skipping: Prebuilt binaries not available for download');
         console.log('Publish prebuilts to your GitHub repo releases');

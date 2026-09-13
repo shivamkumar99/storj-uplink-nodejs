@@ -10,7 +10,13 @@
 export interface UplinkConfig {
   /** User agent string to send with requests */
   userAgent?: string;
-  /** Dial timeout in milliseconds */
+  /**
+   * Dial timeout in milliseconds.
+   *
+   * @deprecated uplink-c marks this field as deprecated (ignored for some
+   * connection types) and will remove it in a future release. It is still
+   * passed through for now; expect it to disappear in the next major.
+   */
   dialTimeoutMilliseconds?: number;
   /** Temporary directory for file operations */
   tempDirectory?: string;

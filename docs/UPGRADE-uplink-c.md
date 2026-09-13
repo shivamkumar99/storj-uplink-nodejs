@@ -51,6 +51,13 @@ Conclusion: **there is no missing function or parameter to add today.** The upgr
 
 ## 4. Plan
 
+_Status (2026-09-13, branch `feat/uplink-c-1.15-upgrade`): Phase 1 done, Phase 3
+done (bumped to `main` @ fa48e8c = storj.io/uplink v1.14.3, verified by
+`make verify-uplink-c-version` and `uplinkCVersion()`), workflows moved to Go
+1.25 and hardened; Phase 2 (API-drift script) and the linux-arm64 prebuild
+(Phase 4) are still open. `dialTimeoutMilliseconds` deprecation note pending._
+
+
 ### Phase 1 — make the uplink-c version explicit and reproducible (this branch)
 
 1. `Makefile`: add `UPLINK_C_VERSION ?= v1.14.1` and clone with `--branch $(UPLINK_C_VERSION) --depth 1`; drop the `git pull origin main` path. Allow a commit SHA as well as a tag (fetch + checkout) so we can build a pre-tag `main` when needed.

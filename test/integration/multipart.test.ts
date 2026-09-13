@@ -145,7 +145,7 @@ describe('Integration: Multipart Upload Operations', () => {
 
       const parts = await mp.listParts();
       expect(Array.isArray(parts)).toBe(true);
-      expect(parts.length).toBe(1);
+      expect(parts).toHaveLength(1);
       expect(parts[0].partNumber).toBe(1);
       expect(parts[0].size).toBe(partData.length);
     } finally {
@@ -210,7 +210,7 @@ describe('Integration: Multipart Upload Operations', () => {
       await part.commit();
 
       const parts = await mp.listParts();
-      expect(parts.length).toBe(1);
+      expect(parts).toHaveLength(1);
       expect(parts[0].etag).toBe(testEtag);
     } finally {
       await mp.abort().catch(() => {});
@@ -449,11 +449,11 @@ describe('Integration: Multipart Upload Operations', () => {
 
       // List all parts
       const allParts = await mp.listParts();
-      expect(allParts.length).toBe(3);
+      expect(allParts).toHaveLength(3);
 
       // List with cursor = 1 (should return parts after part 1)
       const afterPart1 = await mp.listParts({ cursor: 1 });
-      expect(afterPart1.length).toBe(2);
+      expect(afterPart1).toHaveLength(2);
       expect(afterPart1[0].partNumber).toBe(2);
       expect(afterPart1[1].partNumber).toBe(3);
     } finally {

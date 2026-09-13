@@ -97,7 +97,7 @@ export class Uplink {
    * @example
    * ```typescript
    * const access = await uplink.configRequestAccessWithPassphrase(
-   *   { dialTimeoutMilliseconds: 30000 },
+   *   { userAgent: 'my-app/1.0' },
    *   'us1.storj.io:7777',
    *   'your-api-key',
    *   'your-secret-passphrase'

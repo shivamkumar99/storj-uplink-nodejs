@@ -83,7 +83,7 @@ describe('E2E: Access Sharing', () => {
             prefix,
             recursive: true,
           });
-          expect(objects.length).toBe(2);
+          expect(objects).toHaveLength(2);
 
           // Download should work
           const download = await sharedProject.downloadObject(ctx.bucketName, keys[0]);

@@ -9,9 +9,6 @@ import type { Permission, SharePrefix, UplinkConfig, EncryptionKey } from '../ty
 import { ProjectResultStruct } from '../project';
 import { native } from '../native';
 
-/** Native handle type */
-type AccessHandle = unknown;
-
 /** Native permission format */
 interface NativePermission {
   allowDownload: boolean;
@@ -35,14 +32,14 @@ interface NativeSharePrefix {
  * Storj project and access its data.
  */
 export class AccessResultStruct {
-  private readonly _handle: AccessHandle;
+  private readonly _handle: unknown;
   private _closed: boolean = false;
 
   /**
    * Create a new AccessResultStruct from a native handle
    * @internal
    */
-  constructor(handle: AccessHandle) {
+  constructor(handle: unknown) {
     if (handle == null) {
       throw new TypeError('Invalid access handle');
     }
@@ -53,7 +50,7 @@ export class AccessResultStruct {
    * Get the internal handle (for internal use only)
    * @internal
    */
-  get _nativeHandle(): AccessHandle {
+  get _nativeHandle(): unknown {
     this.validateNotClosed();
     return this._handle;
   }
@@ -140,9 +137,7 @@ export class AccessResultStruct {
     if (!bucket || typeof bucket !== 'string') {
       throw new TypeError('bucket must be a non-empty string');
     }
-    if (prefix == null) {
-      prefix = '';
-    }
+    prefix ??= '';
     if (encryptionKey == null) {
       throw new TypeError('encryptionKey is required');
     }

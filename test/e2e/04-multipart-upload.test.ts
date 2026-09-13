@@ -105,7 +105,7 @@ describe('E2E: Multipart Upload Operations', () => {
 
         const parts = await mp.listParts();
         expect(Array.isArray(parts)).toBe(true);
-        expect(parts.length).toBe(1);
+        expect(parts).toHaveLength(1);
         expect(parts[0].partNumber).toBe(1);
         expect(parts[0].size).toBe(partData.length);
       } finally {
@@ -154,7 +154,7 @@ describe('E2E: Multipart Upload Operations', () => {
         await part.commit();
 
         const parts = await mp.listParts();
-        expect(parts.length).toBe(1);
+        expect(parts).toHaveLength(1);
         expect(parts[0].etag).toBe(testEtag);
       } finally {
         await mp.abort().catch(() => {});

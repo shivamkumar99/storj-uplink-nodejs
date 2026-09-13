@@ -54,7 +54,7 @@ describe('E2E: List Objects', () => {
         recursive: true,
       });
 
-      expect(objects.length).toBe(5);
+      expect(objects).toHaveLength(5);
       const keys = objects.map(o => o.key);
       for (const key of listKeys) {
         expect(keys).toContain(key);
@@ -70,12 +70,12 @@ describe('E2E: List Objects', () => {
       });
 
       // Should have: file-a.txt, file-b.txt, sub/ (prefix)
-      expect(objects.length).toBe(3);
+      expect(objects).toHaveLength(3);
 
       const directFiles = objects.filter(o => !o.isPrefix);
       const prefixItems = objects.filter(o => o.isPrefix);
-      expect(directFiles.length).toBe(2);
-      expect(prefixItems.length).toBe(1);
+      expect(directFiles).toHaveLength(2);
+      expect(prefixItems).toHaveLength(1);
       expect(prefixItems[0].key).toBe(`${listPrefix}sub/`);
     });
 
@@ -86,12 +86,12 @@ describe('E2E: List Objects', () => {
       });
 
       // Should have: file-c.txt, file-d.txt, deep/ (prefix)
-      expect(objects.length).toBe(3);
+      expect(objects).toHaveLength(3);
 
       const directFiles = objects.filter(o => !o.isPrefix);
       const prefixItems = objects.filter(o => o.isPrefix);
-      expect(directFiles.length).toBe(2);
-      expect(prefixItems.length).toBe(1);
+      expect(directFiles).toHaveLength(2);
+      expect(prefixItems).toHaveLength(1);
       expect(prefixItems[0].key).toBe(`${listPrefix}sub/deep/`);
     });
   });
@@ -105,7 +105,7 @@ describe('E2E: List Objects', () => {
         custom: true,
       });
 
-      expect(objects.length).toBe(5);
+      expect(objects).toHaveLength(5);
       for (const obj of objects) {
         expect(obj.system).toBeDefined();
         expect(typeof obj.system.contentLength).toBe('number');
@@ -121,7 +121,7 @@ describe('E2E: List Objects', () => {
         recursive: true,
       });
 
-      expect(objects.length).toBe(0);
+      expect(objects).toHaveLength(0);
     });
   });
 
@@ -152,7 +152,7 @@ describe('E2E: List Objects', () => {
         recursive: true,
       });
 
-      expect(objects.length).toBe(count);
+      expect(objects).toHaveLength(count);
 
       const returnedKeys = objects.map(o => o.key).sort();
       for (let i = 0; i < count; i++) {

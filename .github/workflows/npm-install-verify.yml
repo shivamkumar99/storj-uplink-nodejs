@@ -11,6 +11,9 @@ name: NPM Install Verify
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   install-verify:
     name: Install & Require Test (${{ matrix.os }}, ${{ matrix.scope }})
@@ -22,7 +25,7 @@ jobs:
         scope: [local, global]
     steps:
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 20
       - name: Create test directory
@@ -32,12 +35,13 @@ jobs:
         run: |
           cd test-npm-install
           npm init -y
-      - name: Install package from npm (local)
+      # Installing the published package from npm is what this workflow tests.
+      - name: Install package from npm (local) # zizmor: ignore[adhoc-packages]
         if: matrix.scope == 'local'
         run: |
           cd test-npm-install
           npm install storj-uplink-nodejs@latest
-      - name: Install package from npm (global)
+      - name: Install package from npm (global) # zizmor: ignore[adhoc-packages]
         if: matrix.scope == 'global'
         run: npm install -g storj-uplink-nodejs@latest
       - name: Copy test script

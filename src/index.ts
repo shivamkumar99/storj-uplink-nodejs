@@ -40,6 +40,29 @@ export {
 
 // Export centralized native module for internal use
 export { native as _native, NativeModule } from './native';
+import { native } from './native';
 
-/** Package version */
-export const VERSION = '0.1.0';
+/** Package version, read from package.json (dist/ and src/ both sit one level below it). */
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+export const VERSION: string = (require('../package.json') as { version: string }).version;
+
+/** Which uplink-c and storj.io/uplink the loaded native addon was built against. */
+export interface UplinkCVersionInfo {
+  /** The UPLINK_C_VERSION the library was built with (tag or commit SHA). */
+  ref: string;
+  /** Go module version of storj.io/uplink-c as embedded in libuplink. */
+  version: string;
+  /** VCS revision Go recorded for libuplink. */
+  revision: string;
+  /** Version of storj.io/uplink (the Go library uplink-c wraps). */
+  storjUplink: string;
+}
+
+export function uplinkCVersion(): UplinkCVersionInfo {
+  return {
+    ref: native.uplinkCRef ?? 'unknown',
+    version: native.uplinkCVersion ?? 'unknown',
+    revision: native.uplinkCRevision ?? 'unknown',
+    storjUplink: native.storjUplinkVersion ?? 'unknown',
+  };
+}

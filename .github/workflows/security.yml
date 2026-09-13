@@ -20,8 +20,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
-  actions: read
 
 jobs:
   # ============================================================================
@@ -30,6 +28,10 @@ jobs:
   codeql:
     name: CodeQL (${{ matrix.language }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # upload CodeQL results
+      actions: read
     strategy:
       fail-fast: false
       matrix:
@@ -37,25 +39,27 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@9e907b5e64f6b83e7804b09294d44122997950d6 # v4
+        uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
         with:
           languages: ${{ matrix.language }}
           queries: +security-extended,security-and-quality
 
       - name: Setup Node.js (for C build)
         if: matrix.language == 'c-cpp'
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '20'
 
       - name: Setup Go (for C build)
         if: matrix.language == 'c-cpp'
-        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: '1.21'
+          go-version: '1.25'
           cache: false
 
       - name: Build for C analysis
@@ -65,7 +69,7 @@ jobs:
           make install-source SKIP_VERIFY=1
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@9e907b5e64f6b83e7804b09294d44122997950d6 # v4
+        uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
         continue-on-error: true
         with:
           category: "/language:${{ matrix.language }}"
@@ -76,10 +80,18 @@ jobs:
   semgrep:
     name: Semgrep SAST
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # upload SARIF
     container:
-      image: returntocorp/semgrep
+      # semgrep/semgrep is the current image name (returntocorp/semgrep is the legacy alias); digest-pinned
+      image: semgrep/semgrep@sha256:34ab619bf1391a24bfda3f05debd0d8a6ce3093c2d5f9d39cfc00f83c1397823
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+        with:
+
+          persist-credentials: false
 
       - name: Run Semgrep
         run: |
@@ -94,7 +106,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6 # v4
+        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
         continue-on-error: true
         with:
           sarif_file: semgrep.sarif
@@ -106,11 +118,18 @@ jobs:
   dependency-scan:
     name: Dependency Security (Snyk)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # upload SARIF
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+        with:
+
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '20'
           cache: 'npm'
@@ -119,7 +138,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Snyk Security Scan
-        uses: snyk/actions/node@9adf32b1121593767fc3c057af55b55db032dc04 # master
+        uses: snyk/actions/node@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -127,7 +146,7 @@ jobs:
           args: --severity-threshold=high --sarif-file-output=snyk.sarif
 
       - name: Upload Snyk SARIF
-        uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6 # v4
+        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
         continue-on-error: true
         with:
           sarif_file: snyk.sarif
@@ -140,10 +159,14 @@ jobs:
     name: License Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+        with:
+
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '20'
 
@@ -159,12 +182,13 @@ jobs:
     name: Secret Detection (TruffleHog)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: TruffleHog Scan
-        uses: trufflesecurity/trufflehog@6961f2bace57ab32b23b3ba40f8f420f6bc7e004 # main
+        uses: trufflesecurity/trufflehog@363923b901c911a9164f50b6c423f47c15372b1c # v3.97.4
         with:
           extra_args: --only-verified
         continue-on-error: true
@@ -176,7 +200,11 @@ jobs:
     name: Binary Integrity
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+        with:
+
+          persist-credentials: false
 
       - name: Install ClamAV
         run: |
@@ -186,44 +214,45 @@ jobs:
 
       - name: Scan prebuilt binaries with ClamAV
         run: |
-          echo "## Binary Integrity Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Binary Integrity Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [ -d "native/prebuilds" ] && [ "$(find native/prebuilds -name '*.node' -o -name '*.so' -o -name '*.dylib' -o -name '*.dll' 2>/dev/null)" ]; then
             echo "Scanning prebuilt binaries..."
             clamscan --recursive --infected --no-summary native/prebuilds/ > clamav-report.txt 2>&1 || true
 
             if grep -q "FOUND" clamav-report.txt; then
-              echo "| File | Status |" >> $GITHUB_STEP_SUMMARY
-              echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-              grep "FOUND" clamav-report.txt | while read line; do
-                echo "| $line | INFECTED |" >> $GITHUB_STEP_SUMMARY
+              echo "| File | Status |" >> "$GITHUB_STEP_SUMMARY"
+              echo "|------|--------|" >> "$GITHUB_STEP_SUMMARY"
+              grep "FOUND" clamav-report.txt | while read -r line; do
+                echo "| $line | INFECTED |" >> "$GITHUB_STEP_SUMMARY"
               done
-              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "" >> "$GITHUB_STEP_SUMMARY"
               echo "ClamAV detected infected files!"
               exit 1
             else
-              echo "ClamAV: All binaries clean" >> $GITHUB_STEP_SUMMARY
+              echo "ClamAV: All binaries clean" >> "$GITHUB_STEP_SUMMARY"
             fi
           else
-            echo "No prebuilt binaries found to scan" >> $GITHUB_STEP_SUMMARY
+            echo "No prebuilt binaries found to scan" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Generate SHA256 checksums
         run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if [ -d "native/prebuilds" ] && [ "$(find native/prebuilds -type f 2>/dev/null)" ]; then
-            echo "### SHA256 Checksums" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            find native/prebuilds -type f \( -name '*.node' -o -name '*.so' -o -name '*.dylib' -o -name '*.dll' \) -exec sha256sum {} \; | tee checksums-sha256.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No binaries found for checksum generation" >> $GITHUB_STEP_SUMMARY
-          fi
+          {
+            echo ""
+            if [ -d "native/prebuilds" ] && [ "$(find native/prebuilds -type f 2>/dev/null)" ]; then
+              echo "### SHA256 Checksums"
+              echo '```'
+              find native/prebuilds -type f \( -name '*.node' -o -name '*.so' -o -name '*.dylib' -o -name '*.dll' \) -exec sha256sum {} \; | tee checksums-sha256.txt
+              echo '```'
+            else
+              echo "No binaries found for checksum generation"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload integrity reports
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: binary-integrity-report
           path: |
@@ -241,14 +270,23 @@ jobs:
     if: always()
     steps:
       - name: Check security results
+        env:
+          CODEQL: ${{ needs.codeql.result }}
+          SEMGREP: ${{ needs.semgrep.result }}
+          SNYK: ${{ needs.dependency-scan.result }}
+          LICENSES: ${{ needs.licenses.result }}
+          TRUFFLEHOG: ${{ needs.secrets-scan.result }}
+          BINARY: ${{ needs.binary-integrity.result }}
         run: |
-          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| CodeQL | ${{ needs.codeql.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Semgrep | ${{ needs.semgrep.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Snyk Dependencies | ${{ needs.dependency-scan.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Licenses | ${{ needs.licenses.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| TruffleHog Secrets | ${{ needs.secrets-scan.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Binary Integrity | ${{ needs.binary-integrity.result }} |" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Security Scan Summary"
+            echo ""
+            echo "| Check | Status |"
+            echo "|-------|--------|"
+            echo "| CodeQL | $CODEQL |"
+            echo "| Semgrep | $SEMGREP |"
+            echo "| Snyk Dependencies | $SNYK |"
+            echo "| Licenses | $LICENSES |"
+            echo "| TruffleHog Secrets | $TRUFFLEHOG |"
+            echo "| Binary Integrity | $BINARY |"
+          } >> "$GITHUB_STEP_SUMMARY"

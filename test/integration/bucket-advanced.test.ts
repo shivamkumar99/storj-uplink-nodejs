@@ -76,7 +76,7 @@ describe('Integration: Advanced Bucket Operations', () => {
 
       // Verify objects exist
       const objects = await project.listObjects(bucketName, { recursive: true });
-      expect(objects.length).toBe(2);
+      expect(objects).toHaveLength(2);
 
       // Delete bucket with objects
       await project.deleteBucketWithObjects(bucketName);

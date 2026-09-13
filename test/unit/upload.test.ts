@@ -98,7 +98,7 @@ describe('Upload Parameter Validation', () => {
 
         it('should reject empty object keys', () => {
             const emptyKey = '';
-            expect(emptyKey.length).toBe(0);
+            expect(emptyKey).toHaveLength(0);
         });
     });
 });
@@ -133,13 +133,13 @@ describe('Upload Write Buffer', () => {
         it('should support Buffer type', () => {
             const data = Buffer.from('Hello, Storj!');
             expect(Buffer.isBuffer(data)).toBe(true);
-            expect(data.length).toBe(13);
+            expect(data).toHaveLength(13);
         });
 
         it('should support Uint8Array type', () => {
             const data = new Uint8Array([72, 101, 108, 108, 111]); // "Hello"
-            expect(data instanceof Uint8Array).toBe(true);
-            expect(data.length).toBe(5);
+            expect(data).toBeInstanceOf(Uint8Array);
+            expect(data).toHaveLength(5);
         });
 
         it('should convert string to Buffer', () => {
@@ -151,13 +151,13 @@ describe('Upload Write Buffer', () => {
 
         it('should support empty buffer', () => {
             const data = Buffer.alloc(0);
-            expect(data.length).toBe(0);
+            expect(data).toHaveLength(0);
         });
 
         it('should support large buffers', () => {
             const size = 1024 * 1024; // 1 MB
             const data = Buffer.alloc(size);
-            expect(data.length).toBe(size);
+            expect(data).toHaveLength(size);
         });
     });
 });

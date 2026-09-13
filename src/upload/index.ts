@@ -8,9 +8,6 @@
 import type { ObjectInfo, CustomMetadata } from '../types';
 import { native } from '../native';
 
-/** Native handle type */
-type UploadHandle = unknown;
-
 /**
  * Represents an in-progress upload to Storj.
  *
@@ -18,14 +15,14 @@ type UploadHandle = unknown;
  * or `abort()` to cancel the upload.
  */
 export class UploadResultStruct {
-  private readonly _handle: UploadHandle;
+  private readonly _handle: unknown;
   private _isActive: boolean = true;
 
   /**
    * Create a new UploadResultStruct from a native handle
    * @internal
    */
-  constructor(handle: UploadHandle) {
+  constructor(handle: unknown) {
     if (handle == null) {
       throw new TypeError('Invalid upload handle');
     }
@@ -36,7 +33,7 @@ export class UploadResultStruct {
    * Get the internal handle (for internal use only)
    * @internal
    */
-  get _nativeHandle(): UploadHandle {
+  get _nativeHandle(): unknown {
     this.validateActive();
     return this._handle;
   }

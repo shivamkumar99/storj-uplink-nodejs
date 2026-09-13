@@ -13,9 +13,6 @@ import type {
 } from '../types';
 import { native } from '../native';
 
-/** Native handle type */
-type AccessHandle = unknown;
-
 /**
  * Register access with Storj edge services to get S3-compatible credentials.
  *
@@ -45,7 +42,7 @@ type AccessHandle = unknown;
  */
 export async function edgeRegisterAccess(
   config: EdgeConfig,
-  accessHandle: AccessHandle,
+  accessHandle: unknown,
   options?: EdgeRegisterAccessOptions
 ): Promise<EdgeCredentials> {
   if (config == null || typeof config !== 'object') {

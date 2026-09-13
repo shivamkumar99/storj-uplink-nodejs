@@ -492,7 +492,7 @@ describe('Integration: Upload Operations', () => {
     };
     const originalFile = readViaFd(uploadedPath);
     const downloadedFile = readViaFd(downloadedPath);
-    expect(downloadedFile.length).toBe(originalFile.length);
+    expect(downloadedFile).toHaveLength(originalFile.length);
     expect(downloadedFile.equals(originalFile)).toBe(true);
 
     // Verify RIFF/AVI signature is intact after round-trip

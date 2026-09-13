@@ -3,11 +3,13 @@
  */
 
 describe('Module Initialization', () => {
-  it('should export VERSION', () => {
-    // Import will fail until native module is built
-    // This test verifies the structure
-    const expectedVersion = '0.1.0';
-    expect(expectedVersion).toBe('0.1.0');
+  it('exports VERSION equal to package.json and uplink-c provenance strings', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+    const { VERSION, uplinkCVersion } = require('../../src') as typeof import('../../src');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+    expect(VERSION).toBe((require('../../package.json') as { version: string }).version);
+    const v = uplinkCVersion();
+    for (const k of ['ref', 'version', 'revision', 'storjUplink'] as const) expect(typeof v[k]).toBe('string');
   });
 
   it('should export types', () => {

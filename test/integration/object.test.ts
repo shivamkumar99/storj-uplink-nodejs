@@ -152,7 +152,7 @@ describe('Integration: Object Operations', () => {
         recursive: true,
       });
 
-      expect(objects.length).toBe(3);
+      expect(objects).toHaveLength(3);
       const objectKeys = objects.map((o) => o.key);
       for (const key of keys) {
         expect(objectKeys).toContain(key);
@@ -181,7 +181,7 @@ describe('Integration: Object Operations', () => {
       });
 
       // Non-recursive: should see top.txt and sub/ prefix
-      expect(objects.length).toBe(2);
+      expect(objects).toHaveLength(2);
 
       const directFile = objects.find((o) => o.key === `${prefix}/top.txt`);
       expect(directFile).toBeDefined();
@@ -211,7 +211,7 @@ describe('Integration: Object Operations', () => {
         custom: true,
       });
 
-      expect(objects.length).toBe(1);
+      expect(objects).toHaveLength(1);
       const obj = objects[0];
       expect(obj.key).toBe(key);
       expect(obj.system.contentLength).toBe(content.length);

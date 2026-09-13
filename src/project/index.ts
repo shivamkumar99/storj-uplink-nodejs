@@ -19,9 +19,6 @@ import { UploadResultStruct } from '../upload';
 import { DownloadResultStruct } from '../download';
 import { native } from '../native';
 
-/** Native handle type */
-type ProjectHandle = unknown;
-
 /**
  * Represents an open project on Storj.
  *
@@ -29,14 +26,14 @@ type ProjectHandle = unknown;
  * Always call `close()` when done to free resources.
  */
 export class ProjectResultStruct {
-  private readonly _handle: ProjectHandle;
+  private readonly _handle: unknown;
   private _isOpen: boolean = true;
 
   /**
    * Create a new ProjectResultStruct from a native handle
    * @internal
    */
-  constructor(handle: ProjectHandle) {
+  constructor(handle: unknown) {
     if (handle == null) {
       throw new TypeError('Invalid project handle');
     }
@@ -47,7 +44,7 @@ export class ProjectResultStruct {
    * Get the internal handle (for internal use only)
    * @internal
    */
-  get _nativeHandle(): ProjectHandle {
+  get _nativeHandle(): unknown {
     this.validateOpen();
     return this._handle;
   }
@@ -108,7 +105,7 @@ export class ProjectResultStruct {
   async revokeAccess(access: { _nativeHandle: unknown }): Promise<void> {
     this.validateOpen();
 
-    if (access == null || access._nativeHandle == null) {
+    if (access?._nativeHandle == null) {
       throw new TypeError('Invalid access: must be an AccessResultStruct');
     }
 

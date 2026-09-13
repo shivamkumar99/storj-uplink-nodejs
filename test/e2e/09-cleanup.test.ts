@@ -43,7 +43,7 @@ describe('E2E: Cleanup & Deletion', () => {
       }
 
       const afterCleanup = await ctx.project.listObjects(ctx.bucketName, { recursive: true });
-      expect(afterCleanup.length).toBe(0);
+      expect(afterCleanup).toHaveLength(0);
     });
   });
 

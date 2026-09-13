@@ -16,10 +16,6 @@ import type {
 } from '../types';
 import { native } from '../native';
 
-/** Native handle types */
-type ProjectHandle = unknown;
-type PartUploadHandle = unknown;
-
 /** Error messages used in multiple places */
 const ERR_PART_UPLOAD_CLOSED = 'Part upload is closed';
 const ERR_MULTIPART_NOT_ACTIVE = 'Multipart upload is no longer active';
@@ -30,14 +26,14 @@ const ERR_MULTIPART_NOT_ACTIVE = 'Multipart upload is no longer active';
  * Use this class to write data to individual parts of a multipart upload.
  */
 export class PartUploadResultStruct {
-  private readonly _handle: PartUploadHandle;
+  private readonly _handle: unknown;
   private _isOpen: boolean = true;
 
   /**
    * Create a new PartUploadResultStruct
    * @internal
    */
-  constructor(handle: PartUploadHandle) {
+  constructor(handle: unknown) {
     if (handle == null) {
       throw new TypeError('Invalid part upload handle');
     }
@@ -146,7 +142,7 @@ export class PartUploadResultStruct {
  * after failure.
  */
 export class MultipartUpload {
-  private readonly _projectHandle: ProjectHandle;
+  private readonly _projectHandle: unknown;
   private readonly _bucket: string;
   private readonly _key: string;
   private readonly _uploadId: string;
@@ -157,7 +153,7 @@ export class MultipartUpload {
    * Create a new MultipartUpload
    * @internal Use ProjectResultStruct.beginMultipartUpload() instead
    */
-  constructor(projectHandle: ProjectHandle, bucket: string, key: string, uploadId: string) {
+  constructor(projectHandle: unknown, bucket: string, key: string, uploadId: string) {
     this._projectHandle = projectHandle;
     this._bucket = bucket;
     this._key = key;
@@ -303,7 +299,7 @@ export class MultipartUpload {
  * @returns Promise resolving to a MultipartUpload helper
  */
 export async function beginMultipartUpload(
-  projectHandle: ProjectHandle,
+  projectHandle: unknown,
   bucket: string,
   key: string,
   options?: BeginUploadOptions
@@ -321,7 +317,7 @@ export async function beginMultipartUpload(
  * @returns Promise resolving to array of upload info
  */
 export async function listMultipartUploads(
-  projectHandle: ProjectHandle,
+  projectHandle: unknown,
   bucket: string,
   options?: ListUploadsOptions
 ): Promise<UploadInfo[]> {

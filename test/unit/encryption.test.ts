@@ -56,7 +56,7 @@ describe('Encryption Key Derivation', () => {
 
         it('should accept empty Buffer', () => {
             const salt = Buffer.alloc(0);
-            expect(salt.length).toBe(0);
+            expect(salt).toHaveLength(0);
         });
 
         it('should support various salt lengths', () => {

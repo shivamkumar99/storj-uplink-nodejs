@@ -261,7 +261,7 @@ describe('E2E: Complete Application Workflows', () => {
         prefix: 'project/',
         recursive: true 
       });
-      expect(allObjects.length).toBe(structure.length);
+      expect(allObjects).toHaveLength(structure.length);
 
       // List only top-level (non-recursive)
       const topLevel = await project.listObjects(bucketName, { 
@@ -438,7 +438,7 @@ describe('E2E: Complete Application Workflows', () => {
           prefix,
           recursive: true,
         });
-        expect(allObjects.length).toBe(5);
+        expect(allObjects).toHaveLength(5);
         const allKeys = allObjects.map((o: ObjectInfo) => o.key);
         for (const key of keys) {
           expect(allKeys).toContain(key);
@@ -449,12 +449,12 @@ describe('E2E: Complete Application Workflows', () => {
           prefix,
           recursive: false,
         });
-        expect(topLevel.length).toBe(3); // file-a.txt, file-b.txt, sub/
+        expect(topLevel).toHaveLength(3); // file-a.txt, file-b.txt, sub/
 
         const directFiles = topLevel.filter((o: ObjectInfo) => !o.isPrefix);
         const prefixItems = topLevel.filter((o: ObjectInfo) => o.isPrefix);
-        expect(directFiles.length).toBe(2);
-        expect(prefixItems.length).toBe(1);
+        expect(directFiles).toHaveLength(2);
+        expect(prefixItems).toHaveLength(1);
         expect(prefixItems[0].key).toBe(`${prefix}sub/`);
 
         // Nested non-recursive listing under sub/
@@ -462,7 +462,7 @@ describe('E2E: Complete Application Workflows', () => {
           prefix: `${prefix}sub/`,
           recursive: false,
         });
-        expect(subLevel.length).toBe(3); // file-c.txt, file-d.txt, deep/
+        expect(subLevel).toHaveLength(3); // file-c.txt, file-d.txt, deep/
 
         // With system + custom metadata
         const withMeta: ObjectInfo[] = await project.listObjects(bucketName, {
@@ -471,7 +471,7 @@ describe('E2E: Complete Application Workflows', () => {
           system: true,
           custom: true,
         });
-        expect(withMeta.length).toBe(5);
+        expect(withMeta).toHaveLength(5);
         for (const obj of withMeta) {
           expect(obj.system).toBeDefined();
           expect(typeof obj.system.contentLength).toBe('number');
@@ -482,7 +482,7 @@ describe('E2E: Complete Application Workflows', () => {
           prefix: 'nonexistent-prefix-xyz-999/',
           recursive: true,
         });
-        expect(emptyResult.length).toBe(0);
+        expect(emptyResult).toHaveLength(0);
       } finally {
         // Cleanup
         for (const key of keys) {
@@ -511,7 +511,7 @@ describe('E2E: Complete Application Workflows', () => {
           prefix,
           recursive: true,
         });
-        expect(objects.length).toBe(count);
+        expect(objects).toHaveLength(count);
 
         // Verify all expected keys are present
         const returnedKeys = objects.map((o: ObjectInfo) => o.key).sort();
@@ -552,7 +552,7 @@ describe('E2E: Complete Application Workflows', () => {
         // List all parts — uses iterator internally
         const parts = await mp.listParts();
         expect(Array.isArray(parts)).toBe(true);
-        expect(parts.length).toBe(3);
+        expect(parts).toHaveLength(3);
 
         // Verify part structure
         for (let i = 0; i < parts.length; i++) {
@@ -587,7 +587,7 @@ describe('E2E: Complete Application Workflows', () => {
         });
 
         expect(Array.isArray(pending)).toBe(true);
-        expect(pending.length).toBe(3);
+        expect(pending).toHaveLength(3);
 
         // Verify upload info structure
         for (const info of pending) {
@@ -639,7 +639,7 @@ describe('E2E: Complete Application Workflows', () => {
             recursive: true,
           });
 
-          expect(objects.length).toBe(2);
+          expect(objects).toHaveLength(2);
           const objectKeys = objects.map((o: ObjectInfo) => o.key);
           for (const key of keys) {
             expect(objectKeys).toContain(key);
@@ -756,7 +756,7 @@ describe('E2E: Complete Application Workflows', () => {
           prefix,
           recursive: true,
         });
-        expect(objects.length).toBe(count);
+        expect(objects).toHaveLength(count);
       } finally {
         // Cleanup
         for (let i = 0; i < count; i++) {

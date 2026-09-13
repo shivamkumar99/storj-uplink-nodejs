@@ -11,7 +11,7 @@
 [![License](https://img.shields.io/npm/l/storj-uplink-nodejs?color=blue)](https://github.com/shivamkumar99/storj-uplink-nodejs/blob/main/LICENSE)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-lightgrey)](https://github.com/shivamkumar99/storj-uplink-nodejs)
 
-#### *Node.js native bindings for Storj's uplink-c library — v0.1.0-beta.23*
+#### *Node.js native bindings for Storj's uplink-c library — v1.0.4*
 
 A modern, TypeScript-first binding using pure C + Node-API (N-API) for connecting to the Storj decentralized cloud storage network. Prebuilt binaries are available for macOS, Linux, and Windows — no Go toolchain required for most installs.
 
@@ -327,6 +327,14 @@ set UPLINK_INSTALL=skip && npm install storj-uplink-nodejs
 make verify-full
 ```
 
+To see which uplink-c and storj.io/uplink the loaded native addon was built against:
+
+```js
+const { VERSION, uplinkCVersion } = require('storj-uplink-nodejs');
+console.log(VERSION, uplinkCVersion());
+// 1.0.4 { ref: 'fa48e8c…', version: 'v0.0.0-20260824154113-fa48e8c86203', revision: 'fa48e8c…', storjUplink: 'v1.14.3' }
+```
+
 ---
 
 ## <b>Installation Environment Variables</b>
@@ -335,6 +343,7 @@ make verify-full
 | --- | --- | --- |
 | `UPLINK_INSTALL` | `prebuilt` \| `hybrid` \| `source` \| `skip` | Force a specific install method |
 | `UPLINK_C_DIR` | path | Path to a local `uplink-c` source directory (used with `source` or `hybrid`) |
+| `UPLINK_C_VERSION` | tag or commit SHA | uplink-c ref to build for `source` installs. Defaults to the pin in the `Makefile` (the same ref the prebuilt binaries are built from), so every install method wraps the same `libuplink`. |
 | `VERBOSE` | `1` | Enable verbose build output (shows full compiler output) |
 
 ---

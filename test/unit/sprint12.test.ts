@@ -33,7 +33,7 @@ describe('Sprint 12: API Completeness', () => {
 
       it('should require access parameter', () => {
         const method = ProjectResultStruct.prototype.revokeAccess;
-        expect(method.length).toBe(1);
+        expect(method).toHaveLength(1);
       });
     });
   });

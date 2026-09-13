@@ -7,8 +7,8 @@
  * the native module multiple times in different files.
  */
 
-import * as path from 'path';
-import * as os from 'os';
+import * as path from 'node:path';
+import * as os from 'node:os';
 
 /**
  * Instance type for errors created by native error classes.
@@ -40,6 +40,12 @@ export interface StorjErrorSubclassConstructor {
  * Complete interface for all native module functions
  */
 export interface NativeModule {
+  // Build provenance (addons built from 1.0.4 on; absent = older prebuilt)
+  uplinkCRef?: string;
+  uplinkCVersion?: string;
+  uplinkCRevision?: string;
+  storjUplinkVersion?: string;
+
   // Access operations
   parseAccess(accessGrant: string): Promise<unknown>;
   requestAccessWithPassphrase(
@@ -244,7 +250,7 @@ const REQUIRED_NAPI_VERSION = 8;
 function loadNativeModule(): NativeModule {
   // Verify Node-API compatibility before attempting to load
   const nodeNapiVersion = (process.versions as Record<string, string>).napi;
-  if (nodeNapiVersion && parseInt(nodeNapiVersion, 10) < REQUIRED_NAPI_VERSION) {
+  if (nodeNapiVersion && Number.parseInt(nodeNapiVersion, 10) < REQUIRED_NAPI_VERSION) {
     throw new Error(
       `uplink-nodejs requires Node-API v${REQUIRED_NAPI_VERSION}+ ` +
         `(Node.js >=18.0.0), but this Node.js ${process.version} ` +
