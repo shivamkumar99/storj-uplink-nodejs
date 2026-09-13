@@ -82,7 +82,15 @@
     "node-api",
     "napi",
     "multipart-upload",
-    "sdk"
+    "sdk",
+    "storj-uplink",
+    "uplink-c",
+    "libuplink",
+    "nodejs",
+    "typescript",
+    "node-addon",
+    "decentralized-storage",
+    "storj-sdk"
   ],
   "author": "Storj Labs",
   "license": "Apache-2.0",

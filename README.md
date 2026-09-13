@@ -1,4 +1,4 @@
-# <b>storj-uplink-nodejs binding</b>
+# storj-uplink-nodejs — Storj uplink-c bindings for Node.js
 
 [![npm version](https://img.shields.io/npm/v/storj-uplink-nodejs?color=blue&label=npm)](https://www.npmjs.com/package/storj-uplink-nodejs)
 [![npm downloads](https://img.shields.io/npm/dm/storj-uplink-nodejs?color=brightgreen)](https://www.npmjs.com/package/storj-uplink-nodejs)
@@ -11,13 +11,29 @@
 [![License](https://img.shields.io/npm/l/storj-uplink-nodejs?color=blue)](https://github.com/shivamkumar99/storj-uplink-nodejs/blob/main/LICENSE)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-lightgrey)](https://github.com/shivamkumar99/storj-uplink-nodejs)
 
-#### *Node.js native bindings for Storj's uplink-c library — v1.0.4*
-
-A modern, TypeScript-first binding using pure C + Node-API (N-API) for connecting to the Storj decentralized cloud storage network. Prebuilt binaries are available for macOS, Linux, and Windows — no Go toolchain required for most installs.
+**storj-uplink-nodejs** (v1.0.4) is a Node.js SDK for [Storj](https://storj.io) decentralized cloud storage: TypeScript-first native bindings for Storj's [uplink-c](https://github.com/storj/uplink-c) library, written in pure C on Node-API (N-API). Upload, download, list and share objects with end-to-end encryption, use multipart uploads, and issue S3-compatible credentials through Storj edge services. Prebuilt binaries ship for macOS, Linux and Windows, so no Go toolchain is required for most installs.
 
 ---
 
-## <b>Documentation</b>
+## Table of Contents
+
+- [Documentation](#documentation)
+- [Why This Package? — Differences from the Original Storj Binding](#why-this-package-differences-from-the-original-storj-binding)
+- [Initial Set-up](#initial-set-up)
+- [Installation Methods](#installation-methods)
+- [Installation Environment Variables](#installation-environment-variables)
+- [Storj Credential Environment Variables](#storj-credential-environment-variables)
+- [Logging](#logging)
+- [Architecture / Flow Diagram](#architecture-flow-diagram)
+- [TypeScript Configuration](#typescript-configuration)
+- [Testing](#testing)
+- [FAQ](#faq)
+- [Related Projects](#related-projects)
+- [License](#license)
+
+---
+
+## Documentation
 
 | Document | Description |
 | --- | --- |
@@ -30,7 +46,7 @@ A modern, TypeScript-first binding using pure C + Node-API (N-API) for connectin
 
 ---
 
-## <b>Why This Package? — Differences from the Original Storj Binding</b>
+## Why This Package? — Differences from the Original Storj Binding
 
 This package (`storj-uplink-nodejs`) is a full rewrite of the original [`uplink-nodejs`](https://github.com/storj-thirdparty/uplink-nodejs) binding published by Storj. Every layer — build system, native C code, error handling, library loading, and TypeScript API — has been redesigned. Below is a summary of the five major differences.
 
@@ -179,7 +195,7 @@ This decouples the compiled addon from the library binary, which enables the pre
 
 ---
 
-## <b>Initial Set-up</b>
+## Initial Set-up
 
 Node.js **v18 or higher** is required. [Download Node.js](https://nodejs.org/en/download/)
 
@@ -219,7 +235,7 @@ Required only if building from source (`UPLINK_INSTALL=source` or `hybrid`):
 
 ---
 
-## <b>Installation Methods</b>
+## Installation Methods
 
 Supported prebuilt platforms:
 
@@ -337,7 +353,7 @@ console.log(VERSION, uplinkCVersion());
 
 ---
 
-## <b>Installation Environment Variables</b>
+## Installation Environment Variables
 
 | Variable | Values | Description |
 | --- | --- | --- |
@@ -433,7 +449,7 @@ echo source > .uplinkrc
 
 ---
 
-## <b>Storj Credential Environment Variables</b>
+## Storj Credential Environment Variables
 
 These variables are required for running integration tests and examples.
 
@@ -487,7 +503,7 @@ set TEST_BUCKET=my-test-bucket
 
 ---
 
-## <b>Logging</b>
+## Logging
 
 The native addon has a built-in logger controlled entirely via environment variables. No code changes are needed — just set the variable before running your app or tests.
 
@@ -768,7 +784,7 @@ set UPLINK_LOG_LEVEL=none && npm test
 
 ---
 
-## <b>Architecture / Flow Diagram</b>
+## Architecture / Flow Diagram
 
 ```
 Your Application (JS / TypeScript)
@@ -839,7 +855,7 @@ DownloadResultStruct
 
 ---
 
-## <b>TypeScript Configuration</b>
+## TypeScript Configuration
 
 The project uses **two separate `tsconfig.json` files** to keep test globals (`describe`, `it`, `expect`) out of production code.
 
@@ -858,7 +874,7 @@ jest.config.js + ts-jest   ← used by Jest at runtime (reads root tsconfig)
 
 ---
 
-## <b>Testing</b>
+## Testing
 
 Create a `.env.test` file at the module root with your Storj credentials before running integration tests.
 
@@ -917,3 +933,37 @@ Windows 10/11
   Architecture: x64
   Node versions: 18, 20, 22
 ```
+
+---
+
+## FAQ
+
+### What is storj-uplink-nodejs?
+
+A Node.js native binding for Storj's uplink-c library. It exposes the Storj decentralized cloud storage API to JavaScript and TypeScript: access grants, buckets, uploads, downloads, multipart uploads, object metadata, sharing and edge (S3-compatible) credentials.
+
+### How is it different from the original uplink-nodejs?
+
+It is a full rewrite: prebuilt binaries instead of a mandatory Go build on every install, native logging, one C codebase for all platforms, error mapping done in C, and runtime loading of libuplink. See [Why This Package?](#why-this-package-differences-from-the-original-storj-binding).
+
+### Which Node.js versions and platforms are supported?
+
+Node.js 18, 20 and 22 on Linux x64, macOS (Apple Silicon and Intel) and Windows x64. The addon uses Node-API, so one prebuilt binary works across Node versions.
+
+### Which uplink-c version does it use?
+
+The exact uplink-c commit is pinned in the Makefile and recorded in the addon at build time; call `uplinkCVersion()` to see the uplink-c and storj.io/uplink versions your installed build embeds.
+
+### Is Storj S3-compatible?
+
+Yes. Storj offers an S3-compatible gateway, and this library can register access grants with Storj's edge services to obtain S3 credentials (`edgeRegisterAccess`) and public share links (`edgeJoinShareUrl`).
+
+## Related Projects
+
+- [storj-uplink-mcp](https://github.com/shivamkumar99/storj-uplink-mcp) — a Model Context Protocol (MCP) server built on this library, so AI assistants such as Claude Desktop can manage Storj files in natural language
+- [storj/uplink-c](https://github.com/storj/uplink-c) — the C library these bindings wrap
+- [Storj documentation](https://docs.storj.io) — access grants, buckets, encryption and the S3 gateway
+
+## License
+
+Apache-2.0, as declared in `package.json`.
