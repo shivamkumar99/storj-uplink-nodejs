@@ -81,3 +81,25 @@ Conclusion: **there is no missing function or parameter to add today.** The upgr
 - Phase 1: `make install-source UPLINK_C_VERSION=v1.14.1` twice on a clean tree yields byte-identical `libuplink.*` module info (`go version -m`), and `node -e "console.log(require('.').uplinkCVersion())"` prints `v1.14.1`.
 - Phase 2: temporarily point the script at v1.10.1 — it must report `uplinkFlushCoverage` missing and nothing else.
 - Phase 3: `npm test` (native + TS), then in `storj-uplink-mcp`: `npm run test:e2e` with the new library linked.
+
+## 6. Header-level verification (v1.14.0 vs v1.14.1 vs `main`)
+
+Done by building uplink-c at each ref (`go build -buildmode=c-shared`) and diffing the
+*generated* `libuplink.h`, not by reading Go sources:
+
+| Comparison | Result |
+|---|---|
+| `extern` declarations v1.14.0 → v1.14.1 | identical (88) |
+| `extern` declarations v1.14.1 → `main` @ fa48e8c | identical (88) |
+| full generated header v1.14.0 → `main` (ignoring the Go-version banner) | no difference |
+| header the published 1.0.3 package was compiled against (`native/include/uplink.h`) | identical to v1.14.1 |
+| `uplink_definitions.h` struct fields v1.14.0 → v1.14.1 | no field added or removed |
+| `uplink_definitions.h` v1.14.1 → `main` | two comment lines: `dial_timeout_milliseconds` deprecated |
+| option/config struct fields the binding never sets | none — all 14 structs fully covered |
+| output struct fields the binding never reads | none |
+
+The only source change between v1.14.0 and v1.14.1 is the optional coverage
+hook (`uplinkFlushCoverage`, behind the `uplink_coverage` build tag). Between
+v1.14.1 and `main` it is the storj.io/uplink bump (v1.14.1 → v1.14.3) plus the
+deprecation annotation. **No function in the binding needs a signature or
+parameter change for any of these refs.**
