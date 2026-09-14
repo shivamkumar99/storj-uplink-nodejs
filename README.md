@@ -11,7 +11,7 @@
 [![License](https://img.shields.io/npm/l/storj-uplink-nodejs?color=blue)](https://github.com/shivamkumar99/storj-uplink-nodejs/blob/main/LICENSE)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-lightgrey)](https://github.com/shivamkumar99/storj-uplink-nodejs)
 
-**storj-uplink-nodejs** (v1.0.5) is a Node.js SDK for [Storj](https://storj.io) decentralized cloud storage: TypeScript-first native bindings for Storj's [uplink-c](https://github.com/storj/uplink-c) library, written in pure C on Node-API (N-API). Upload, download, list and share objects with end-to-end encryption, use multipart uploads, and issue S3-compatible credentials through Storj edge services. Prebuilt binaries ship for macOS, Linux and Windows, so no Go toolchain is required for most installs.
+**storj-uplink-nodejs** (v1.0.6) is a Node.js SDK for [Storj](https://storj.io) decentralized cloud storage: TypeScript-first native bindings for Storj's [uplink-c](https://github.com/storj/uplink-c) library, written in pure C on Node-API (N-API). Upload, download, list and share objects with end-to-end encryption, use multipart uploads, and issue S3-compatible credentials through Storj edge services. Prebuilt binaries ship for macOS, Linux and Windows, so no Go toolchain is required for most installs.
 
 ---
 
@@ -351,7 +351,7 @@ To see which uplink-c and storj.io/uplink the loaded native addon was built agai
 ```js
 const { VERSION, uplinkCVersion } = require('storj-uplink-nodejs');
 console.log(VERSION, uplinkCVersion());
-// 1.0.5 { ref: 'fa48e8c…', version: 'v0.0.0-20260824154113-fa48e8c86203', revision: 'fa48e8c…', storjUplink: 'v1.14.3' }
+// 1.0.6 { ref: 'fa48e8c…', version: 'v0.0.0-20260824154113-fa48e8c86203', revision: 'fa48e8c…', storjUplink: 'v1.14.3' }
 ```
 
 ---
