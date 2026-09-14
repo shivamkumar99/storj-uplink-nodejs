@@ -90,6 +90,9 @@
           ]
         }],
         ["OS=='linux'", {
+          "defines": [
+            "_GNU_SOURCE"
+          ],
           "libraries": [
             "-L<(module_root_dir)/native/prebuilds/linux-<(target_arch)",
             "-luplink",
