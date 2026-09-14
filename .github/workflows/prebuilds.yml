@@ -84,17 +84,17 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Build from source
-        run: make install-source VERBOSE=1 "UPLINK_C_VERSION=$UPLINK_C_VERSION" "PLATFORM=$PLATFORM"
+        run: make install-source VERBOSE=1 "UPLINK_C_VERSION=$UPLINK_C_VERSION" "PLATFORM=$MATRIX_PLATFORM"
         shell: bash
         env:
           npm_config_arch: ${{ matrix.arch }}
-          PLATFORM: ${{ matrix.platform }}
+          MATRIX_PLATFORM: ${{ matrix.platform }}   # not PLATFORM: MSVC setup exports Platform=x64 on Windows and shadows it
 
       - name: Verify build
-        run: make verify-full "PLATFORM=$PLATFORM"
+        run: make verify-full "PLATFORM=$MATRIX_PLATFORM"
         shell: bash
         env:
-          PLATFORM: ${{ matrix.platform }}
+          MATRIX_PLATFORM: ${{ matrix.platform }}   # not PLATFORM: MSVC setup exports Platform=x64 on Windows and shadows it
 
       - name: Run tests
         if: matrix.arch == 'arm64' || runner.arch == 'X64'
@@ -103,11 +103,11 @@ jobs:
 
       - name: Create archive
         env:
-          PLATFORM: ${{ matrix.platform }}
+          MATRIX_PLATFORM: ${{ matrix.platform }}   # not PLATFORM: MSVC setup exports Platform=x64 on Windows and shadows it
           REF_NAME: ${{ github.ref_name || 'dev' }}
         run: |
-          cd "native/prebuilds/$PLATFORM"
-          tar -czvf "../../../uplink-nodejs-$REF_NAME-$PLATFORM.tar.gz" ./*
+          cd "native/prebuilds/$MATRIX_PLATFORM"
+          tar -czvf "../../../uplink-nodejs-$REF_NAME-$MATRIX_PLATFORM.tar.gz" ./*
         shell: bash
 
       - name: Upload artifact

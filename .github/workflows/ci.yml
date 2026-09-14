@@ -161,8 +161,8 @@ jobs:
 
       - name: Copy addon to prebuilds for cross-version testing
         env:
-          PLATFORM: ${{ matrix.platform }}
-        run: cp build/Release/uplink_native.node "native/prebuilds/$PLATFORM/"
+          MATRIX_PLATFORM: ${{ matrix.platform }}   # not PLATFORM: MSVC setup exports Platform=x64 on Windows and shadows it
+        run: cp build/Release/uplink_native.node "native/prebuilds/$MATRIX_PLATFORM/"
         shell: bash
 
       - name: Upload build artifacts

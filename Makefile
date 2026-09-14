@@ -79,6 +79,13 @@ else
     CP       = cp -f $1 $2
 endif
 
+# A command-line PLATFORM= (empty) would override the detection above and turn
+# every platform path into "native/prebuilds//…" — seen on Windows runners
+# where a shadowed shell variable expanded to nothing. Fail fast instead.
+ifeq ($(strip $(PLATFORM)),)
+$(error PLATFORM is empty: pass PLATFORM=<os>-<arch> (e.g. win32-x64) or leave it unset for auto-detection)
+endif
+
 # Derive Go arch from PLATFORM (supports cross-compilation override)
 PLATFORM_ARCH := $(lastword $(subst -, ,$(PLATFORM)))
 GO_ARCH_x64   := amd64

@@ -165,11 +165,11 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Build from source
-        run: make install-source VERBOSE=1 "PLATFORM=$PLATFORM"
+        run: make install-source VERBOSE=1 "PLATFORM=$MATRIX_PLATFORM"
         shell: bash
         env:
           npm_config_arch: ${{ matrix.arch }}
-          PLATFORM: ${{ matrix.platform }}
+          MATRIX_PLATFORM: ${{ matrix.platform }}   # not PLATFORM: MSVC setup exports Platform=x64 on Windows and shadows it
 
       - name: Run tests
         if: matrix.arch == 'arm64' || runner.arch == 'X64'
@@ -177,10 +177,10 @@ jobs:
 
       - name: Verify build outputs
         env:
-          PLATFORM: ${{ matrix.platform }}
+          MATRIX_PLATFORM: ${{ matrix.platform }}   # not PLATFORM: MSVC setup exports Platform=x64 on Windows and shadows it
         run: |
-          echo "=== native/prebuilds/$PLATFORM ==="
-          ls -lh "native/prebuilds/$PLATFORM/" || echo "ERROR: prebuilds dir missing!"
+          echo "=== native/prebuilds/$MATRIX_PLATFORM ==="
+          ls -lh "native/prebuilds/$MATRIX_PLATFORM/" || echo "ERROR: prebuilds dir missing!"
           echo "=== native/include ==="
           ls -lh native/include/ || echo "ERROR: include dir missing!"
         shell: bash
@@ -198,12 +198,12 @@ jobs:
         # native/include/ so that the hybrid fallback (node-gyp rebuild) can find
         # the headers without a separate download step.
         env:
-          PLATFORM: ${{ matrix.platform }}
+          MATRIX_PLATFORM: ${{ matrix.platform }}   # not PLATFORM: MSVC setup exports Platform=x64 on Windows and shadows it
           VERSION: ${{ needs.validate.outputs.version }}
         run: |
           set -euo pipefail
-          ARCHIVE="uplink-nodejs-v${VERSION}-${PLATFORM}.tar.gz"
-          PREBUILD_DIR="native/prebuilds/${PLATFORM}"
+          ARCHIVE="uplink-nodejs-v${VERSION}-${MATRIX_PLATFORM}.tar.gz"
+          PREBUILD_DIR="native/prebuilds/${MATRIX_PLATFORM}"
           INCLUDE_DIR="native/include"
 
           # Verify inputs exist
