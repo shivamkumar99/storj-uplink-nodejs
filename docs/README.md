@@ -144,12 +144,15 @@ The TypeScript layer re-exports these classes with full type annotations but doe
 
 **Original:** `libuplink` was linked at compile time via `binding.gyp` linker flags (e.g. `-luplinkcv1.2.4`). The library had to be in a hard-coded location at build time. There was no mechanism to locate the library at runtime or swap it without a recompile.
 
-**This package:** The native addon does not link `libuplink` at compile time. Instead, `library_loader.c` loads it at runtime using `dlopen` (Linux/macOS) or `LoadLibraryA` (Windows) and resolves each function symbol with `dlsym` / `GetProcAddress`. The loader searches a priority chain of paths:
+**This package:** `library_loader.c` locates `libuplink` at runtime with `dlopen` (Linux/macOS) or `LoadLibraryEx` (Windows). The search is anchored to the addon file itself, never to the process working directory, so the package works no matter where the consuming application is started from. The loader searches, in order:
 
-1. `UPLINK_LIBRARY_PATH` environment variable (user override)
-2. `native/prebuilds/<platform>/libuplink.{dylib,so,dll}` (shipped prebuilt)
-3. `prebuilds/<platform>/libuplink.{dylib,so,dll}` (alternate relative path)
-4. System library directories
+1. `UPLINK_LIBRARY_PATH` environment variable — the library file **or** the directory that contains it (user override)
+2. The directory of `uplink_native.node` itself (`native/prebuilds/<platform>/`, the shipped layout)
+3. `<addon dir>/../../native/prebuilds/<platform>/` (addon compiled into `build/Release/`)
+4. `native/prebuilds/<platform>/` and `prebuilds/<platform>/` relative to the working directory (legacy layouts)
+5. System library directories (`PATH` on Windows, `LD_LIBRARY_PATH` / `DYLD_LIBRARY_PATH` and the linker defaults elsewhere)
+
+On Windows the addon additionally prepends its own directory (and the `UPLINK_LIBRARY_PATH` directory, if set) to the process `PATH` before loading, because Windows resolves DLL dependencies through `PATH` rather than through the location of the module that needs them. If `libuplink.dll` cannot be found at all, `require()` fails with an `ERR_UPLINK_LIBRARY_NOT_FOUND` error instead of crashing on the first call. Keep the DLL anywhere you like: point `UPLINK_LIBRARY_PATH` at it, or put its directory on `PATH`. CI runs `scripts/verify-runtime-load.js` on every platform to prove these cases, including a relocated DLL on Windows.
 
 This decouples the compiled addon from the library binary, which enables the prebuilt distribution model — the `.node` addon and `libuplink` shared library can be distributed and updated independently without recompiling from source.
 

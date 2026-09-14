@@ -19,11 +19,15 @@ extern void* uplink_lib_handle;
 
 /**
  * Load the uplink-c shared library.
- * Searches in multiple locations:
- * 1. UPLINK_LIBRARY_PATH environment variable
- * 2. native/prebuilds/<platform>/
- * 3. ./prebuilds/<platform>/
- * 4. System library path
+ * Searches in multiple locations, in order:
+ * 1. UPLINK_LIBRARY_PATH environment variable (library file or its directory)
+ * 2. The directory containing this addon (native/prebuilds/<platform>/)
+ * 3. <addon dir>/../../native/prebuilds/<platform>/ (addon built into build/Release/)
+ * 4. native/prebuilds/<platform>/ relative to the working directory
+ * 5. ./prebuilds/<platform>/ relative to the working directory
+ * 6. System library path
+ *
+ * Steps 2 and 3 make loading independent of the working directory.
  * 
  * @return 0 on success, -1 on failure
  */

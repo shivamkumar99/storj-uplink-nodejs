@@ -75,7 +75,7 @@ done (bumped to `main` @ fa48e8c = storj.io/uplink v1.14.3, verified by
 7. `dialTimeoutMilliseconds`: keep accepting it (the field still exists), mark it `@deprecated` in `src/types/index.ts` and the README, and stop mentioning it in examples. Remove in the next major once upstream removes the field.
 8. Rebuild all prebuilds, run the native test suite and the storj-uplink-mcp e2e suite (local storj-up network) against the new binaries.
 
-### Phase 4 — release 1.0.4
+### Phase 4 — release 1.0.4 / 1.0.5
 
 9. Ship together with the already-merged node-gyp fix for hybrid/source installs, and add **linux-arm64** to the prebuild matrix (currently absent, which is what forces the MCP Docker image onto linux/amd64 emulation).
 

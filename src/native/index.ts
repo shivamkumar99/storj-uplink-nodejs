@@ -8,6 +8,7 @@
  */
 
 import * as path from 'node:path';
+import * as fs from 'node:fs';
 import * as os from 'node:os';
 
 /**
@@ -241,6 +242,43 @@ export interface ErrorClassesMap {
 const REQUIRED_NAPI_VERSION = 8;
 
 /**
+ * Directory named by UPLINK_LIBRARY_PATH (the variable may point at the
+ * library file or at its directory). Returns undefined when unset or unusable.
+ */
+function libraryDirFromEnv(value: string | undefined): string | undefined {
+  if (value === undefined || value === '' || value.includes('..')) {
+    return undefined;
+  }
+  try {
+    const resolved = path.resolve(value);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    return fs.statSync(resolved).isDirectory() ? resolved : path.dirname(resolved);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Prepend existing directories to the process PATH (Windows DLL search path),
+ * skipping ones that are missing or already present.
+ */
+function exposeLibraryDirsOnPath(dirs: (string | undefined)[]): void {
+  const current = process.env.PATH ?? '';
+  const present = new Set(current.split(path.delimiter).map((d) => d.toLowerCase()));
+  const additions: string[] = [];
+  for (const dir of dirs) {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    if (dir !== undefined && dir !== '' && !present.has(dir.toLowerCase()) && fs.existsSync(dir)) {
+      additions.push(dir);
+      present.add(dir.toLowerCase());
+    }
+  }
+  if (additions.length > 0) {
+    process.env.PATH = [...additions, current].join(path.delimiter);
+  }
+}
+
+/**
  * Load the native module once
  *
  * Search order:
@@ -274,6 +312,18 @@ function loadNativeModule(): NativeModule {
     'uplink_native.node'
   );
   const buildPath = path.join(__dirname, '..', '..', 'build', 'Release', 'uplink_native.node');
+
+  // Windows resolves a DLL through the process PATH (never through the
+  // directory of the .node file that needs it). Put the directories that hold
+  // libuplink.dll in front of PATH so both the explicit load in the addon and
+  // the delay-load helper find it regardless of the working directory.
+  if (process.platform === 'win32') {
+    exposeLibraryDirsOnPath([
+      libraryDirFromEnv(process.env.UPLINK_LIBRARY_PATH),
+      path.dirname(prebuiltPath),
+      path.dirname(buildPath),
+    ]);
+  }
 
   // Try prebuilt first (Option 3: no compilation needed)
   let prebuiltError: unknown;
