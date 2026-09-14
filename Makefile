@@ -519,39 +519,39 @@ verify-full: _verify
 # =============================================================================
 .PHONY: check-curl
 check-curl:
-	$(Q)which curl > /dev/null 2>&1 \
+	$(Q)command -v curl > /dev/null 2>&1 \
 		|| (echo "ERROR: curl not found. Install curl and retry." && exit 1)
 
 .PHONY: check-go
 check-go:
-	$(Q)which go > /dev/null 2>&1 \
+	$(Q)command -v go > /dev/null 2>&1 \
 		|| (echo "ERROR: Go not found. Install from https://golang.org/dl/" && exit 1)
 	$(Q)echo "  go: $$(go version | awk '{print $$3}')"
 
 .PHONY: check-git
 check-git:
-	$(Q)which git > /dev/null 2>&1 \
+	$(Q)command -v git > /dev/null 2>&1 \
 		|| (echo "ERROR: git not found." && exit 1)
 
 .PHONY: check-compiler
 check-compiler:
-	$(Q)(which cc > /dev/null 2>&1 || which gcc > /dev/null 2>&1 || which clang > /dev/null 2>&1) \
+	$(Q)(command -v cc > /dev/null 2>&1 || command -v gcc > /dev/null 2>&1 || command -v clang > /dev/null 2>&1) \
 		|| (echo "ERROR: No C compiler found. Install build-essential (Linux) or Xcode CLT (macOS)." && exit 1)
 
 .PHONY: check-python
 check-python:
-	$(Q)(which python3 > /dev/null 2>&1 || which python > /dev/null 2>&1) \
+	$(Q)(command -v python3 > /dev/null 2>&1 || command -v python > /dev/null 2>&1) \
 		|| (echo "ERROR: Python not found (required by node-gyp)." && exit 1)
 
 .PHONY: check-node
 check-node:
-	$(Q)which node > /dev/null 2>&1 \
+	$(Q)command -v node > /dev/null 2>&1 \
 		|| (echo "ERROR: Node.js not found. Install from https://nodejs.org/" && exit 1)
 	@echo "  Node.js: $$(node --version)"
 
 .PHONY: check-npm
 check-npm:
-	$(Q)which npm > /dev/null 2>&1 \
+	$(Q)command -v npm > /dev/null 2>&1 \
 		|| (echo "ERROR: npm not found. Install Node.js from https://nodejs.org/" && exit 1)
 	@echo "  npm: $$(npm --version)"
 
