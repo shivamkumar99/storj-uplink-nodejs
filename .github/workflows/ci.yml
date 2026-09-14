@@ -136,6 +136,7 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false   # no go.mod here; uplink-c is built in its own clone
       
       - name: Setup Python (Windows)
         if: runner.os == 'Windows'
@@ -358,6 +359,7 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false   # no go.mod here; uplink-c is built in its own clone
 
       - name: Setup Python (Windows)
         if: runner.os == 'Windows'
