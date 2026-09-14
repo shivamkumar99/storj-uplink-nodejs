@@ -227,8 +227,17 @@ static int resolve_env_library(const char* env_path, char* resolved, size_t reso
         return -1;
     }
 #else
-    if (realpath(env_path, absolute) == NULL) {
+    /* realpath() needs a PATH_MAX-sized buffer (glibc aborts on anything
+     * smaller); let it allocate, then copy into our bounded buffer. */
+    char* canonical = realpath(env_path, NULL);
+    if (canonical == NULL) {
         LOG_ERROR("UPLINK_LIBRARY_PATH rejected: cannot resolve path (%s)", env_path);
+        return -1;
+    }
+    int written = snprintf(absolute, sizeof(absolute), "%s", canonical);
+    free(canonical);
+    if (written < 0 || (size_t)written >= sizeof(absolute)) {
+        LOG_ERROR("UPLINK_LIBRARY_PATH rejected: path too long");
         return -1;
     }
 #endif

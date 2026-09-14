@@ -74,7 +74,9 @@ check('UPLINK_LIBRARY_PATH=<dir> is honoured', { cwd: elsewhere, env: { UPLINK_L
 if (process.platform === 'win32') {
   const moved = fs.mkdtempSync(path.join(os.tmpdir(), 'uplink-dll-'));
   const movedLib = path.join(moved, libName);
-  fs.renameSync(libPath, movedLib);
+  // copy + delete rather than rename: the temp dir may be on another drive (EXDEV)
+  fs.copyFileSync(libPath, movedLib);
+  fs.rmSync(libPath);
   try {
     check('relocated DLL: fails cleanly (no crash) without UPLINK_LIBRARY_PATH', { cwd: elsewhere, expectLoad: false });
     check('relocated DLL: UPLINK_LIBRARY_PATH=<file> loads it', { cwd: elsewhere, env: { UPLINK_LIBRARY_PATH: movedLib }, expectLoad: true });
@@ -85,7 +87,7 @@ if (process.platform === 'win32') {
       expectLoad: true,
     });
   } finally {
-    fs.renameSync(movedLib, libPath);
+    fs.copyFileSync(movedLib, libPath);
     fs.rmSync(moved, { recursive: true, force: true });
   }
 }
