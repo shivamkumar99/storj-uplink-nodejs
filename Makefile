@@ -100,6 +100,13 @@ INCLUDE_DIR      := $(PROJECT_DIR)/native/include
 BUILD_DIR        := $(PROJECT_DIR)/build
 DIST_DIR         := $(PROJECT_DIR)/dist
 DOWNLOAD_DIR     := $(PROJECT_DIR)/.downloads
+
+# Project-relative spellings for commands that must not see a Windows drive
+# letter: GNU tar (the one Git for Windows puts on PATH) reads "C:/..." as a
+# remote host "C" and fails with "Cannot connect to C: resolve failed", so
+# every tar invocation below uses these instead of the absolute variables.
+DOWNLOAD_REL     := .downloads
+PLATFORM_REL     := native/prebuilds/$(PLATFORM)
 UPLINK_C_SRC_DIR := $(PROJECT_DIR)/.uplink-c-build
 
 NODE_ADDON       := uplink_native.node
@@ -270,7 +277,7 @@ install-prebuilt: check-curl $(PLATFORM_DIR) $(INCLUDE_DIR) $(DOWNLOAD_DIR)
 		    echo "  Check that v$(VERSION) has a release for $(PLATFORM)."; \
 		    exit 1)
 	$(Q)echo "Extracting archive ..."
-	$(Q)tar -xzf "$(DOWNLOAD_DIR)/$(ARCHIVE_NAME)" -C "$(PLATFORM_DIR)"
+	$(Q)tar -xzf "$(DOWNLOAD_REL)/$(ARCHIVE_NAME)" -C "$(PLATFORM_REL)"
 	$(Q)echo "Installing headers ..."
 	$(Q)if [ -d "$(PLATFORM_DIR)/include" ]; then \
 		cp -f "$(PLATFORM_DIR)/include"/*.h "$(INCLUDE_DIR)/" ; \
@@ -310,9 +317,9 @@ install-hybrid: check-curl check-compiler check-python $(PLATFORM_DIR) $(INCLUDE
 		    echo "  URL: $(RELEASE_URL)/$(ARCHIVE_NAME)"; \
 		    exit 1)
 	$(Q)echo "Extracting library and headers ..."
-	$(Q)TMP="$(DOWNLOAD_DIR)/hybrid-extract" ; \
+	$(Q)TMP="$(DOWNLOAD_REL)/hybrid-extract" ; \
 	rm -rf "$$TMP" && mkdir -p "$$TMP" ; \
-	tar -xzf "$(DOWNLOAD_DIR)/$(ARCHIVE_NAME)" -C "$$TMP" ; \
+	tar -xzf "$(DOWNLOAD_REL)/$(ARCHIVE_NAME)" -C "$TMP" ; \
 	cp -f "$$TMP/$(LIB_NAME)" "$(PLATFORM_DIR)/$(LIB_NAME)" ; \
 	echo "  Library  -> $(PLATFORM_DIR)/$(LIB_NAME)" ; \
 	if [ -d "$$TMP/include" ]; then \

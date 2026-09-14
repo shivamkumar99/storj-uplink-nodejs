@@ -384,12 +384,55 @@ jobs:
         shell: bash
 
   # ============================================================================
+  # Prebuilt-archive install — the path every npm consumer takes
+  #
+  # Downloads the latest *published* release archive through the Makefile
+  # (make install-prebuilt) on all three OSes and loads the addon. On Windows
+  # this runs under Git Bash, whose GNU tar treats "C:/..." as a remote host —
+  # the exact failure npm users hit before the Makefile switched to relative
+  # paths. The nightly install-methods tests skip this case, so it lives here.
+  # ============================================================================
+  prebuilt-install:
+    name: Prebuilt install (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies (no native build)
+        run: npm ci --ignore-scripts
+
+      - name: Install the latest published prebuilt archive via the Makefile
+        shell: bash
+        run: |
+          latest=$(npm view storj-uplink-nodejs version)
+          echo "latest published version: $latest"
+          make install-prebuilt VERBOSE=1 "VERSION=$latest"
+
+      - name: Load the prebuilt addon
+        shell: bash
+        run: |
+          npm run build:ts
+          node -e "const l = require('./dist'); console.log('loaded', typeof l.Uplink, process.platform + '-' + process.arch, JSON.stringify(l.uplinkCVersion()))"
+
+  # ============================================================================
   # All CI Passed Gate
   # ============================================================================
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [workflow-lint, lint, c-analysis, build, test, prebuild-compat, install-persistence]
+    needs: [workflow-lint, lint, c-analysis, build, test, prebuild-compat, install-persistence, prebuilt-install]
     if: always()
     steps:
       - name: Check all jobs passed
@@ -402,6 +445,7 @@ jobs:
             test=${{ needs.test.result }}
             prebuild-compat=${{ needs.prebuild-compat.result }}
             install-persistence=${{ needs.install-persistence.result }}
+            prebuilt-install=${{ needs.prebuilt-install.result }}
         run: |
           failed=0
           while IFS='=' read -r job result; do
