@@ -189,6 +189,8 @@ jobs:
         run: npm run build:ts
 
       - name: Verify runtime library resolution (foreign cwd, UPLINK_LIBRARY_PATH, relocated DLL)
+        # darwin-x64 is cross-compiled on an arm64 runner whose Node cannot load it (same gate as "Run tests")
+        if: matrix.arch == 'arm64' || runner.arch == 'X64'
         run: node scripts/verify-runtime-load.js
         shell: bash
 
