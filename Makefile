@@ -325,22 +325,31 @@ install-hybrid: check-curl check-compiler check-python $(PLATFORM_DIR) $(INCLUDE
 		    exit 1)
 	$(Q)echo "Extracting library and headers ..."
 	$(Q)TMP="$(DOWNLOAD_REL)/hybrid-extract" ; \
-	rm -rf "$$TMP" && mkdir -p "$$TMP" ; \
-	tar -xzf "$(DOWNLOAD_REL)/$(ARCHIVE_NAME)" -C "$TMP" ; \
-	cp -f "$$TMP/$(LIB_NAME)" "$(PLATFORM_DIR)/$(LIB_NAME)" ; \
-	echo "  Library  -> $(PLATFORM_DIR)/$(LIB_NAME)" ; \
+	rm -rf "$$TMP" && mkdir -p "$$TMP" && \
+	tar -xzf "$(DOWNLOAD_REL)/$(ARCHIVE_NAME)" -C "$$TMP" && \
+	cp -f "$$TMP/$(LIB_NAME)" "$(PLATFORM_DIR)/$(LIB_NAME)" && \
+	echo "  Library  -> $(PLATFORM_DIR)/$(LIB_NAME)" && \
+	for extra in uplink.lib uplink.def uplink.exp ; do \
+		if [ -f "$$TMP/$$extra" ]; then \
+			cp -f "$$TMP/$$extra" "$(PLATFORM_DIR)/$$extra" && \
+			echo "  Import   -> $(PLATFORM_DIR)/$$extra" ; \
+		fi ; \
+	done && \
 	if [ -d "$$TMP/include" ]; then \
-		cp -f "$$TMP/include"/*.h "$(INCLUDE_DIR)/" ; \
+		cp -f "$$TMP/include"/*.h "$(INCLUDE_DIR)/" && \
 		echo "  Headers  -> $(INCLUDE_DIR)/" ; \
 	else \
-		echo "WARNING: no include/ in archive — headers not found" ; \
+		echo "WARNING: no include/ in archive — headers not found" ; false ; \
 	fi ; \
-	rm -rf "$$TMP"
+	status=$$? ; rm -rf "$$TMP" ; exit $$status
 	$(Q)rm -f "$(DOWNLOAD_DIR)/$(ARCHIVE_NAME)"
 	$(Q)if [ ! -f "$(INCLUDE_DIR)/$(UPLINK_HEADER_DST)" ]; then \
 		echo "ERROR: $(INCLUDE_DIR)/$(UPLINK_HEADER_DST) not found — cannot compile addon." ; \
 		exit 1 ; \
 	fi
+	# node-gyp links the addon against uplink.lib on Windows; release archives
+	# ship one, older archives may not — derive it from the header in that case.
+	$(Q)if [ "$(DETECTED_OS)" = "windows" ] && [ ! -f "$(LIB_FILE)" ]; then $(MAKE) generate-import-lib ; fi
 	$(Q)echo ""
 	$(Q)echo "Compiling uplink_native.node ..."
 	$(Q)$(NODE_GYP) rebuild
