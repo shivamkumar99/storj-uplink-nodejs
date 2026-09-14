@@ -377,6 +377,10 @@ install-source: check-go check-git check-compiler check-python $(PLATFORM_DIR) $
 	$(Q)echo "  uplink-c at $$(git -C "$(UPLINK_C_SRC_DIR)" rev-parse --short HEAD)"
 	$(Q)echo ""
 	$(Q)echo "[2/3] Building libuplink (Go) ..."
+	$(Q)cd "$(UPLINK_C_SRC_DIR)" && for attempt in 1 2 3; do \
+		go mod download && break ; \
+		echo "  go mod download failed (attempt $attempt/3), retrying ..." ; sleep 5 ; \
+	done
 	$(Q)cd "$(UPLINK_C_SRC_DIR)" && \
 		CGO_ENABLED=1 GOOS=$(GO_OS) GOARCH=$(GO_ARCH) \
 		go build -buildmode=c-shared -o "$(LIB_NAME)" .

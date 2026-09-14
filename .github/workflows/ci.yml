@@ -437,8 +437,10 @@ jobs:
           npm run build:ts
           node -e "const l = require('./dist'); console.log('loaded', typeof l.Uplink, process.platform + '-' + process.arch, JSON.stringify(l.uplinkCVersion()))"
 
-      - name: Verify runtime library resolution (foreign cwd, UPLINK_LIBRARY_PATH, relocated DLL)
-        run: node scripts/verify-runtime-load.js
+      - name: Verify runtime library resolution (published addon; layout-independent checks only)
+        # The addon here comes from the published release, which may predate the
+        # loader in this tree. Drop --published-addon once that release ships it.
+        run: node scripts/verify-runtime-load.js --published-addon
         shell: bash
 
   # ============================================================================

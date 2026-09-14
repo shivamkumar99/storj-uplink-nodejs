@@ -9,7 +9,13 @@
  * The check exercises a real uplink-c call (parseAccess on a bogus grant),
  * which is what triggers the Windows delay-load of libuplink.dll.
  *
- * Usage: node scripts/verify-runtime-load.js   (after `npm run build:ts` and a native install)
+ * Usage: node scripts/verify-runtime-load.js [--published-addon]
+ *   (after `npm run build:ts` and a native install)
+ *
+ * --published-addon: the addon binary was downloaded from a GitHub release and
+ *   may predate the current loader, so only the layout-independent checks run
+ *   (package root and foreign cwd). Drop the flag once the release that ships
+ *   this loader is the published one.
  */
 'use strict';
 
@@ -18,12 +24,15 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
+const publishedAddon = process.argv.includes('--published-addon');
 const root = path.resolve(__dirname, '..');
 const dist = path.join(root, 'dist');
 const platform = `${process.platform}-${os.arch()}`;
 const prebuildDir = path.join(root, 'native', 'prebuilds', platform);
 const libName = { win32: 'libuplink.dll', darwin: 'libuplink.dylib' }[process.platform] ?? 'libuplink.so';
 const libPath = path.join(prebuildDir, libName);
+// node-gyp also drops a copy of the library next to the freshly built addon.
+const libCopies = [libPath, path.join(root, 'build', 'Release', libName)].filter((p) => fs.existsSync(p));
 
 // Calls into uplink-c and prints a marker only when the call reached the library.
 const probe = `
@@ -64,6 +73,13 @@ check('loads from the package root', { cwd: root, expectLoad: true });
 const elsewhere = fs.mkdtempSync(path.join(os.tmpdir(), 'uplink-cwd-'));
 check(`loads from an unrelated cwd (${elsewhere})`, { cwd: elsewhere, expectLoad: true });
 
+if (publishedAddon) {
+  console.log('--published-addon: skipping checks that need the current loader');
+  fs.rmSync(elsewhere, { recursive: true, force: true });
+  console.log(failures === 0 ? '\nruntime load verification: all checks passed' : `\n${failures} check(s) failed`);
+  process.exit(failures === 0 ? 0 : 1);
+}
+
 // 3. UPLINK_LIBRARY_PATH pointing at the library file and at its directory.
 check('UPLINK_LIBRARY_PATH=<file> is honoured', { cwd: elsewhere, env: { UPLINK_LIBRARY_PATH: libPath }, expectLoad: true });
 check('UPLINK_LIBRARY_PATH=<dir> is honoured', { cwd: elsewhere, env: { UPLINK_LIBRARY_PATH: prebuildDir }, expectLoad: true });
@@ -74,9 +90,10 @@ check('UPLINK_LIBRARY_PATH=<dir> is honoured', { cwd: elsewhere, env: { UPLINK_L
 if (process.platform === 'win32') {
   const moved = fs.mkdtempSync(path.join(os.tmpdir(), 'uplink-dll-'));
   const movedLib = path.join(moved, libName);
-  // copy + delete rather than rename: the temp dir may be on another drive (EXDEV)
+  // copy + delete rather than rename: the temp dir may be on another drive (EXDEV).
+  // Every copy has to go, otherwise the PATH layer legitimately finds the other one.
   fs.copyFileSync(libPath, movedLib);
-  fs.rmSync(libPath);
+  for (const copy of libCopies) fs.rmSync(copy);
   try {
     check('relocated DLL: fails cleanly (no crash) without UPLINK_LIBRARY_PATH', { cwd: elsewhere, expectLoad: false });
     check('relocated DLL: UPLINK_LIBRARY_PATH=<file> loads it', { cwd: elsewhere, env: { UPLINK_LIBRARY_PATH: movedLib }, expectLoad: true });
@@ -87,7 +104,7 @@ if (process.platform === 'win32') {
       expectLoad: true,
     });
   } finally {
-    fs.copyFileSync(movedLib, libPath);
+    for (const copy of libCopies) fs.copyFileSync(movedLib, copy);
     fs.rmSync(moved, { recursive: true, force: true });
   }
 }
