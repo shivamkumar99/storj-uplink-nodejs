@@ -60,9 +60,22 @@ static napi_value Init(napi_env env, napi_value exports) {
     
     /* Load the uplink-c library */
     if (load_uplink_library() != 0) {
-        LOG_WARN("uplink library not found - module will work in stub mode");
-        /* Don't throw error here - allow module to load for testing */
-        /* The actual functions will throw if library is not loaded */
+#ifdef _WIN32
+        /*
+         * On Windows the addon delay-loads libuplink.dll; the first uplink call
+         * would otherwise terminate the process with an unhandled delay-load
+         * exception. Fail here, at require() time, with an actionable message.
+         */
+        napi_throw_error(env, "ERR_UPLINK_LIBRARY_NOT_FOUND",
+            "libuplink.dll could not be located. It is expected next to "
+            "uplink_native.node (native/prebuilds/win32-x64/). Reinstall the "
+            "package, or set UPLINK_LIBRARY_PATH to the DLL or its directory.");
+        return NULL;
+#else
+        /* On macOS/Linux the symbols are bound by the dynamic linker (rpath), so
+         * the addon remains usable even when the explicit load above fails. */
+        LOG_WARN("uplink library not found via explicit search - relying on the dynamic linker");
+#endif
     }
     
     /* Register access operations */

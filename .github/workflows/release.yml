@@ -185,6 +185,13 @@ jobs:
           ls -lh native/include/ || echo "ERROR: include dir missing!"
         shell: bash
 
+      - name: Build TypeScript
+        run: npm run build:ts
+
+      - name: Verify runtime library resolution (foreign cwd, UPLINK_LIBRARY_PATH, relocated DLL)
+        run: node scripts/verify-runtime-load.js
+        shell: bash
+
       - name: Create archive
         # Archive layout:
         #   libuplink.{dylib,so,dll}   — shared library

@@ -159,6 +159,13 @@ jobs:
         run: make verify-full
         shell: bash
 
+      - name: Build TypeScript
+        run: npm run build:ts
+
+      - name: Verify runtime library resolution (foreign cwd, UPLINK_LIBRARY_PATH, relocated DLL)
+        run: node scripts/verify-runtime-load.js
+        shell: bash
+
       - name: Copy addon to prebuilds for cross-version testing
         env:
           MATRIX_PLATFORM: ${{ matrix.platform }}   # not PLATFORM: MSVC setup exports Platform=x64 on Windows and shadows it
@@ -320,6 +327,10 @@ jobs:
           "
         shell: bash
 
+      - name: Verify runtime library resolution (foreign cwd, UPLINK_LIBRARY_PATH, relocated DLL)
+        run: node scripts/verify-runtime-load.js
+        shell: bash
+
       - name: Run unit tests (prebuilt mode)
         run: npm run test:unit
 
@@ -425,6 +436,12 @@ jobs:
         run: |
           npm run build:ts
           node -e "const l = require('./dist'); console.log('loaded', typeof l.Uplink, process.platform + '-' + process.arch, JSON.stringify(l.uplinkCVersion()))"
+
+      - name: Verify runtime library resolution (published addon; layout-independent checks only)
+        # The addon here comes from the published release, which may predate the
+        # loader in this tree. Drop --published-addon once that release ships it.
+        run: node scripts/verify-runtime-load.js --published-addon
+        shell: bash
 
   # ============================================================================
   # All CI Passed Gate
